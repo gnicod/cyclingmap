@@ -27,6 +27,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'org.osmdroid:osmdroid-android:5.4.1:release@aar'
+    compile 'org.osmdroid:osmdroid-android:5.6.4'
+    compile 'org.oscim:vtm:0.6.0-SNAPSHOT'
+    compile 'org.oscim:vtm-themes:0.6.0-SNAPSHOT'
+    compile 'org.oscim:vtm-android:0.6.0-SNAPSHOT@aar'
     testCompile 'junit:junit:4.12'
 }
