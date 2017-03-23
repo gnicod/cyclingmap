@@ -19,6 +19,7 @@ allprojects {
         mavenLocal()
         mavenCentral()
         maven { url 'https://github.com/opensciencemap/maven-repo/raw/master/' }
+        maven { url "https://jitpack.io" }
     }
 }
 
