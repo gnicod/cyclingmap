@@ -4,10 +4,12 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -33,6 +35,8 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -136,11 +140,16 @@ class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer
 
     @Override
     protected void onPostExecute(final HashMap<Integer,String> res) {
-        CharSequence[] items = res.values().toArray(new CharSequence[res.size()]);
-        //final CharSequence[] items = {"A", "B", "C"};
+        Iterator it = res.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer,String> pair = (Map.Entry) it.next();
+            Log.i("OPENRUNNER",pair.getKey() + "=> " + pair.getValue());
+            putRouteIntoDB(pair.getKey(),pair.getValue(),"false");
+        };
 
+        CharSequence[] items = res.values().toArray(new CharSequence[res.size()]);
         AlertDialog.Builder builder = new AlertDialog.Builder(this.ctx);
-        builder.setTitle("Make your selection");
+        builder.setTitle("Select a route");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int item) {
                 String id = (String) res.keySet().toArray()[item].toString();
@@ -166,7 +175,9 @@ class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer
         // get download service and enqueue file
         DownloadManager manager = (DownloadManager) ctx.getSystemService(Context.DOWNLOAD_SERVICE);
         BroadcastReceiver onDownloadComplete=new BroadcastReceiver() {
-            public void onReceive(Context ctxt, Intent intent) {
+            public void onReceive(Context ctx, Intent intent) {
+
+
                 Toast.makeText(ctx, "Download Complete",Toast.LENGTH_LONG).show();
                 KmlDocument kmlDocument = new KmlDocument();
                 kmlDocument.parseKMLFile(new File("/storage/emulated/0/Download/name-of-the-file.kml"));
@@ -175,13 +186,31 @@ class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer
                 FolderOverlay kmlOverlay = (FolderOverlay)kmlDocument.mKmlRoot.buildOverlay(map, null, null, kmlDocument);
                 map.getOverlays().add(kmlOverlay);
                 map.invalidate();
-                //BoundingBox bb = kmlDocument.mKmlRoot.getBoundingBox();
-                //map.zoomToBoundingBox(bb,true);
-                //map.getController().setCenter(bb.getCenter());
+                BoundingBox bb = kmlDocument.mKmlRoot.getBoundingBox();
+                map.getController().setCenter(bb.getCenter());
+
             }
         };
         ctx.registerReceiver(onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         manager.enqueue(request);
+    }
+
+    private void setRouteDownloaded(int id) {
+        OpenRunnerRouteDbHelper openRunnerRouteDbHelper = new OpenRunnerRouteDbHelper(ctx);
+        SQLiteDatabase db = openRunnerRouteDbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("downloaded","true");
+        db.update(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_NAME,values,"id=?", new String[]{"id"});
+    }
+
+    private void putRouteIntoDB(int id, String name, String file) {
+        OpenRunnerRouteDbHelper openRunnerRouteDbHelper = new OpenRunnerRouteDbHelper(ctx);
+        SQLiteDatabase db = openRunnerRouteDbHelper.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_COLUMN_NAME,"testname");
+        contentValues.put(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_COLUMN_DOWNLOADED,"false");
+        db.insert(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_NAME,null,contentValues);
+        
     }
 
 

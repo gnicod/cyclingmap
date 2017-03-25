@@ -8,6 +8,7 @@ import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.config.Configuration;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Location;
@@ -84,6 +85,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -115,6 +117,10 @@ public class MainActivity extends AppCompatActivity
         ITileSource tileSourceBase = TileSourceFactory.getTileSource(
                 preferences.getString("tileSource","OpenTopoMap")
         );
+
+        /*
+        IGN GEOPORTAIL LAYER
+
         String key = "lv4ajb751s4scbbr4f5p2mo0";
         return "http://wxs.ign.fr/" + key
                 + "/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&"
@@ -124,6 +130,7 @@ public class MainActivity extends AppCompatActivity
                 0, 18, 256, ".png",
                 new String[] { "http://overlay.openstreetmap.nl/basemap/" });
         TileSourceFactory.addTileSource();
+        */
 
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this);
 
@@ -139,12 +146,7 @@ public class MainActivity extends AppCompatActivity
         GeoPoint startPoint = new GeoPoint(45.65, 5.94);
         mapController.setCenter(startPoint);
 
-        /*
-        openrunner
-         */
-        String username = preferences.getString("openrunnerUsername","ovskywalker");
-        String password = preferences.getString("openrunnerPassword","17c2509");
-        new OpenRunnerTask(this).execute(new OpenRunnerLogin(username,password));
+
 
         /*
         KML
@@ -167,12 +169,6 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-        try {
-            OpenRunnerHelper openrunner = new OpenRunnerHelper(preferences);
-        } catch (IOException e) {
-            Log.i("AAAAAAA","aaaaa");
-            e.printStackTrace();
-        }
 
 
     }
@@ -238,12 +234,19 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
+        if (id == R.id.nav_openrunner) {
+            /*
+            openrunner
+            */
+            String username = preferences.getString("openrunner_username","ovskywalker");
+            String password = preferences.getString("openrunner_password","17c2509");
+            new OpenRunnerTask(this).execute(new OpenRunnerLogin(username,password));
         } else if (id == R.id.nav_gallery) {
-
+            Intent intent = new Intent(this,ORListRoutesActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_slideshow) {
-
+            Intent intent = new Intent(this,SettingsActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_manage) {
 
         } else if (id == R.id.nav_share) {
