@@ -38,6 +38,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import fr.ovski.ovskimap.OpenRunnerHelper;
+import fr.ovski.ovskimap.OpenRunnerRouteDbHelper;
+import fr.ovski.ovskimap.R;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -45,39 +48,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.internal.JavaNetCookieJar;
 
-class OpenRunnerLogin {
-    String username;
-    String password;
 
-    public OpenRunnerLogin(String username,String password) {
-        this.username = username;
-        this.password = password;
-    }
-}
-
-class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer,String>> {
+class ORRoutesTask extends AsyncTask<Void, Integer, HashMap<Integer,String>> {
 
     private OkHttpClient client;
     Context ctx;
-
-    private void login(OpenRunnerLogin openRunnerLogin) {
-        RequestBody requestBody = new FormBody.Builder()
-                .add("user",openRunnerLogin.username)
-                .add("pwd",openRunnerLogin.password)
-                .add("stayconnected","on")
-                .build();
-        Request request = new Request.Builder()
-                .url("http://www.openrunner.com/account/login.php")
-                .post(requestBody)
-                .build();
-        try {
-            Response response = client.newCall(request).execute();
-            Log.i("OPENRUNNER","response => " + response.body().string());
-            // TODO store cookie somewhere ?
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    OpenRunnerHelper orHelper;
 
     private HashMap<Integer,String> getRoutes() {
         Request request = new Request.Builder()
@@ -113,29 +89,20 @@ class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer
     }
 
     @Override
-    protected HashMap<Integer,String> doInBackground(OpenRunnerLogin... openRunnerLogins) {
-        CookieManager cookieManager = new CookieManager();
-        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-         client = new OkHttpClient.Builder()
-                .cookieJar(new JavaNetCookieJar(cookieManager))
-                .build();
-        int count = openRunnerLogins.length;
-        Long totalSize = new Long(0);
-        for (int i = 0; i < count; i++) {
-            OpenRunnerLogin oLogin = openRunnerLogins[i];
-            totalSize += i;
-            this.login(oLogin);
-            return this.getRoutes();
-        }
-        return new HashMap<Integer,String>();
+    protected HashMap<Integer,String> doInBackground(Void... params ) {
+        orHelper.login();
+        this.client = orHelper.getClient();
+        return this.getRoutes();
     }
 
     public interface AsyncResponse {
         void processFinish(String output);
     }
 
-    public OpenRunnerTask(Context ctx) {
+    public ORRoutesTask(Context ctx) {
+
         this.ctx = ctx;
+        this.orHelper = new OpenRunnerHelper(ctx);
     }
 
     @Override
@@ -172,7 +139,7 @@ class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         }
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "name-of-the-file.kml");
-        // get download service and enqueue file
+        // get download service and enqueue fileP
         DownloadManager manager = (DownloadManager) ctx.getSystemService(Context.DOWNLOAD_SERVICE);
         BroadcastReceiver onDownloadComplete=new BroadcastReceiver() {
             public void onReceive(Context ctx, Intent intent) {
@@ -200,16 +167,16 @@ class OpenRunnerTask extends AsyncTask<OpenRunnerLogin, Integer, HashMap<Integer
         SQLiteDatabase db = openRunnerRouteDbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("downloaded","true");
-        db.update(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_NAME,values,"id=?", new String[]{"id"});
+        db.update(OpenRunnerRouteDbHelper.ORRoutes.TABLE_NAME,values,"id=?", new String[]{"id"});
     }
 
     private void putRouteIntoDB(int id, String name, String file) {
         OpenRunnerRouteDbHelper openRunnerRouteDbHelper = new OpenRunnerRouteDbHelper(ctx);
         SQLiteDatabase db = openRunnerRouteDbHelper.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_COLUMN_NAME,"testname");
-        contentValues.put(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_COLUMN_DOWNLOADED,"false");
-        db.insert(OpenRunnerRouteDbHelper.OpenRunnerEntry.TABLE_NAME,null,contentValues);
+        contentValues.put(OpenRunnerRouteDbHelper.ORRoutes.TABLE_COLUMN_NAME,"testname");
+        contentValues.put(OpenRunnerRouteDbHelper.ORRoutes.TABLE_COLUMN_DOWNLOADED,"false");
+        db.insert(OpenRunnerRouteDbHelper.ORRoutes.TABLE_NAME,null,contentValues);
         
     }
 

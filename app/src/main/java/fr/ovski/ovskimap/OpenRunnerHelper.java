@@ -1,6 +1,8 @@
 package fr.ovski.ovskimap;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -8,56 +10,71 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
 
-/**
- * Created by ovski on 22/03/17.
- */
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.internal.JavaNetCookieJar;
+
+class OpenRunnerLogin {
+    String username;
+    String password;
+
+    public OpenRunnerLogin(String username,String password) {
+        this.username = username;
+        this.password = password;
+    }
+}
+
 
 public class OpenRunnerHelper {
 
-    SharedPreferences preferences;
+    SharedPreferences pref;
     List cookies;
+    OkHttpClient client;
+    String username;
+    String password;
 
-    public OpenRunnerHelper(SharedPreferences pref) throws IOException {
-        String username = pref.getString("openrunnerUsername","ovskywalker");
-        String password = pref.getString("openrunnerPassword","17c2509");
-        URL url = new URL("http://openrunner.com");
-        String postData = String.format("user=%s&pwd=%s&stayconnected=on",
-                username,
-                password
-        );
-        try{
-            URLConnection con = url.openConnection();
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            con.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.3");
-            con.setRequestProperty("Referer", "http://www.openrunner.com/");
-            //con.connect();
-
-            DataOutputStream output = new DataOutputStream(con.getOutputStream());
-            output.writeBytes(postData);
-            output.close();
-
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(
-                            con.getInputStream()));
-            String decodedString;
-            while ((decodedString = in.readLine()) != null) {
-                Log.i("OPENRUNNER",decodedString);
-            }
-            cookies = con.getHeaderFields().get("Set-Cookie");
-            in.close();
-            Log.i("OPENRUNNER","test");
-
-            // http://www.openrunner.com/search/searchMyRoutes.php?u=km
+    public void login() {
+        RequestBody requestBody = new FormBody.Builder()
+                .add("user",username)
+                .add("pwd",password)
+                .add("stayconnected","on")
+                .build();
+        Request request = new Request.Builder()
+                .url("http://www.openrunner.com/account/login.php")
+                .post(requestBody)
+                .build();
+        try {
+            Response response = client.newCall(request).execute();
+            Log.i("OPENRUNNER","response => " + response.body().string());
+            // TODO store cookie somewhere ?
+        } catch (IOException e) {
+            Log.i("OPENRUNNER","fuck");
+            e.printStackTrace();
         }
-        catch (Exception e){
-            Log.i("OPENRUNNER",e.toString());
-        }
+    }
 
+    public OpenRunnerHelper(Context ctx){
+        pref = PreferenceManager.getDefaultSharedPreferences(ctx.getApplicationContext());
+        username = pref.getString("openrunner_username","ovskywalker");
+        password = pref.getString("openrunner_password","17c2509");
+        Log.i("OPENRUNNER",username);
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+        client = new OkHttpClient.Builder()
+                .cookieJar(new JavaNetCookieJar(cookieManager))
+                .build();
+    }
+
+    public OkHttpClient getClient(){
+        return client;
     }
 }

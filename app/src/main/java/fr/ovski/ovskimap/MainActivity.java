@@ -1,24 +1,20 @@
 package fr.ovski.ovskimap;
 
-import android.app.DownloadManager;
 import android.content.Context;
 
 import org.osmdroid.api.IMapController;
+import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer;
 import org.osmdroid.bonuspack.kml.KmlDocument;
-import org.osmdroid.config.Configuration;
+import org.osmdroid.bonuspack.location.OverpassAPIProvider;
 
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -28,34 +24,29 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.Toast;
 
 import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
-import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.FolderOverlay;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Polygon;
 
-import java.io.IOException;
+import fr.ovski.ovskimap.models.ORPass;
+import fr.ovski.ovskimap.tasks.OverpassQueryTask;
+import hu.supercluster.overpasser.library.query.OverpassQuery;
 
-import fr.ovski.ovskimap.OpenRunnerHelper;
-
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver {
 
     private MapView map;
-    private SharedPreferences preferences;
-    private SharedPreferences.Editor editor;
+
+
     private LocationManager mLocationManager;
     private final LocationListener mLocationListener = new LocationListener() {
         @Override
@@ -110,13 +101,12 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
         Context ctx = getApplicationContext();
         //important! set your user agent to prevent getting banned from the osm servers
-        preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
-        Configuration.getInstance().load(ctx, preferences);
-        editor = preferences.edit();
 
         ITileSource tileSourceBase = TileSourceFactory.getTileSource(
                 preferences.getString("tileSource","OpenTopoMap")
         );
+
+
 
         /*
         IGN GEOPORTAIL LAYER
@@ -143,21 +133,16 @@ public class MainActivity extends AppCompatActivity
 
         map.getOverlays().add(0, mapEventsOverlay);
 
+        // cluster
+        RadiusMarkerClusterer poiMarkers = new RadiusMarkerClusterer(this);
+        map.getOverlays().add(poiMarkers);
+        Drawable clusterIconD = getResources().getDrawable(R.drawable.marker_cluster);
+        Bitmap clusterIcon = ((BitmapDrawable)clusterIconD).getBitmap();
+        poiMarkers.setIcon(clusterIcon);
+
+
         GeoPoint startPoint = new GeoPoint(45.65, 5.94);
         mapController.setCenter(startPoint);
-
-
-
-        /*
-        KML
-         */
-        /*
-        KmlDocument kmlDocument = new KmlDocument();
-        kmlDocument.parseKMLUrl("http://mapsengine.google.com/map/kml?forcekml=1&mid=z6IJfj90QEd4.kUUY9FoHFRdE");
-        FolderOverlay kmlOverlay = (FolderOverlay)kmlDocument.mKmlRoot.buildOverlay(map, null, null, kmlDocument);
-        map.getOverlays().add(1,kmlOverlay);
-        map.invalidate();
-        */
 
         /*
         GPS
@@ -169,13 +154,24 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-
+        /*
+        SHOW COL FROM DB
+         */
+        OpenRunnerRouteDbHelper odb = new OpenRunnerRouteDbHelper(this);
+        for(ORPass pass : odb.getAllPasses() ){
+            Marker startMarker = new Marker(map);
+            startMarker.setIcon(getResources().getDrawable(R.drawable.marker_cluster));
+            startMarker.setPosition(new GeoPoint(pass.getLat(), pass.getLng()));
+            startMarker.setTitle(pass.getName()+"\n"+pass.getAlt()+"m");
+            startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            poiMarkers.add(startMarker);
+            Log.i("OPENRUNNER","FROM db " + pass.toString());
+        }
 
     }
 
     private void createSourceSelectBox(){
         final CharSequence sources[] = new CharSequence[] {"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map source ?");
         builder.setItems(sources, new DialogInterface.OnClickListener() {
@@ -213,52 +209,8 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_openrunner) {
-            /*
-            openrunner
-            */
-            String username = preferences.getString("openrunner_username","ovskywalker");
-            String password = preferences.getString("openrunner_password","17c2509");
-            new OpenRunnerTask(this).execute(new OpenRunnerLogin(username,password));
-        } else if (id == R.id.nav_gallery) {
-            Intent intent = new Intent(this,ORListRoutesActivity.class);
-            startActivity(intent);
-        } else if (id == R.id.nav_slideshow) {
-            Intent intent = new Intent(this,SettingsActivity.class);
-            startActivity(intent);
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
 
     @Override
     public boolean singleTapConfirmedHelper(GeoPoint p) {
@@ -270,7 +222,28 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean longPressHelper(GeoPoint p) {
+        final CharSequence sources[] = new CharSequence[] {"Insert POI", "Start routing", "Go to"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Que faire ?");
+        builder.setItems(sources, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        Toast.makeText(getApplicationContext(), "TODO: insert marker in db", Toast.LENGTH_SHORT).show();
+                        break;
+                    case 1:
+                        Toast.makeText(getApplicationContext(), "TODO start routing", Toast.LENGTH_SHORT).show();
+                        break;
+                    case 20:
+                        Toast.makeText(getApplicationContext(), "TODO go to ", Toast.LENGTH_SHORT).show();
+                        break;
+                }
 
+            }
+        });
+        builder.show();
+        /*
         Marker startMarker = new Marker(map);
         startMarker.setPosition(p);
         startMarker.setTitle("Col de lol");
@@ -279,5 +252,39 @@ public class MainActivity extends AppCompatActivity
         map.invalidate();
         Toast.makeText(this, "long tapped", Toast.LENGTH_SHORT).show();
         return false;
+        */
+        overpassTest();
+        return false;
+    }
+
+    private void overpassTest(){
+        new OverpassQueryTask(map.getBoundingBox()).execute();
+        /*
+        OverpassAPIProvider overpassProvider = new OverpassAPIProvider();
+        String url = overpassProvider.urlForTagSearchKml("highway=speed_camera", map.getBoundingBox(), 500, 30);
+        KmlDocument kmlDocument = new KmlDocument();
+
+
+        boolean ok = overpassProvider.addInKmlFolder(kmlDocument.mKmlRoot, url);
+        FolderOverlay kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, null, kmlDocument);
+        map.getOverlays().add(kmlOverlay);
+        */
+
+        /*
+        String query = new OverpassQuery().
+                format(OutputFormat.JSON)
+                .timeout(30)
+                .filterQuery()
+                .node()
+                .amenity("drinking_water")
+                .boundingBox(
+                        47.48047027491862, 19.039797484874725,
+                        47.51331674014172, 19.07404761761427
+                )
+                .end()
+                .output(OutputVerbosity.BODY, OutputModificator.CENTER, OutputOrder.QT, 100)
+                .build();
+        Log.i("OPENRUNNER", query);
+        */
     }
 }
