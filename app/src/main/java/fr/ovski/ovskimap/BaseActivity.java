@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -16,6 +15,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
+
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton;
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
+import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
 
 import org.osmdroid.config.Configuration;
 import org.osmdroid.util.BoundingBox;
@@ -32,6 +36,25 @@ public class BaseActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Floating Action Menu
+        ImageView icon = new ImageView(this); // Create an icon
+        icon.setImageDrawable(getResources().getDrawable(R.drawable.ic_menu_mapmode));
+        FloatingActionButton actionButton = new FloatingActionButton.Builder(this)
+                .setContentView(icon)
+                .build();
+        SubActionButton.Builder itemBuilder = new SubActionButton.Builder(this);
+        // repeat many times:
+        ImageView itemIcon = new ImageView(this);
+        itemIcon.setImageDrawable( getResources().getDrawable(R.drawable.ic_menu_mylocation) );
+        SubActionButton button1 = itemBuilder.setContentView(itemIcon).build();
+
+        FloatingActionMenu actionMenu = new FloatingActionMenu.Builder(this)
+                .addSubActionView(button1)
+                .attachTo(actionButton)
+                .build();
+
+
+
         Context ctx = getApplicationContext();
         preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
         Configuration.getInstance().load(ctx, preferences);
@@ -40,6 +63,7 @@ public class BaseActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        /*
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -48,6 +72,7 @@ public class BaseActivity extends AppCompatActivity
                         .setAction("Action", null).show();
             }
         });
+        */
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(

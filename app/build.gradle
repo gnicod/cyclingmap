@@ -36,5 +36,6 @@ dependencies {
     compile 'com.android.support:support-v4:24.2.1'
     compile 'com.android.support:support-vector-drawable:24.2.1'
     compile 'hu.supercluster:overpasser:0.2.2'
+    compile 'com.oguzdev:CircularFloatingActionMenu:1.0.2'
     testCompile 'junit:junit:4.12'
 }

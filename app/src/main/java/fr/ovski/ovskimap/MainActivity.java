@@ -1,5 +1,6 @@
 package fr.ovski.ovskimap;
 
+import android.Manifest;
 import android.content.Context;
 
 import org.osmdroid.api.IMapController;
@@ -8,16 +9,23 @@ import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.bonuspack.location.OverpassAPIProvider;
 
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -26,8 +34,18 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton;
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
+import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
+
+import org.osmdroid.bonuspack.routing.GraphHopperRoadManager;
+import org.osmdroid.bonuspack.routing.Road;
+import org.osmdroid.bonuspack.routing.RoadManager;
 import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
@@ -36,8 +54,19 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.FolderOverlay;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.Polyline;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 import fr.ovski.ovskimap.models.ORPass;
+import fr.ovski.ovskimap.tasks.GraphHopperTask;
 import fr.ovski.ovskimap.tasks.OverpassQueryTask;
 import hu.supercluster.overpasser.library.query.OverpassQuery;
 
@@ -45,17 +74,35 @@ public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver {
 
     private MapView map;
+    private LinearLayout routingView;
 
+    private RadiusMarkerClusterer poiMarkers;
 
     private LocationManager mLocationManager;
+
+    private static final int TAP_DEFAULT_MODE = 0;
+    private static final int TAP_ROUTING_MODE = 1;
+
+    private int tapState = TAP_DEFAULT_MODE;
+
+    // Routing
+    ArrayList<GeoPoint> waypoints;
+    ArrayList<Marker> routingMarkers;
+    private AsyncTask<Object, Object, Road> routingTask;
+
+    private void addMarkerUserLocation(Location location, boolean current) {
+        Marker startMarker = new Marker(map);
+        startMarker.setIcon(getResources().getDrawable(R.drawable.marker_default_focused_base));
+        startMarker.setPosition(new GeoPoint(location.getLatitude(), location.getLongitude()));
+        startMarker.setTitle("ICI");
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        map.getOverlays().add(startMarker);
+    }
+
     private final LocationListener mLocationListener = new LocationListener() {
         @Override
         public void onLocationChanged(final Location location) {
-            Marker startMarker = new Marker(map);
-            startMarker.setPosition(new GeoPoint(location.getLatitude(), location.getLongitude()));
-            startMarker.setTitle("ICI");
-            startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            map.getOverlays().add(startMarker);
+            addMarkerUserLocation(location, true);
         }
 
         @Override
@@ -76,18 +123,89 @@ public class MainActivity extends BaseActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i("OVSKIMAP",getApplicationInfo().dataDir);
+        File directory = new File(getApplicationInfo().dataDir+"/files");
+        File[] files = directory.listFiles();
+        Log.d("Files", "Size: "+ files.length);
+        for (int i = 0; i < files.length; i++)
+        {
+            Log.d("Files", "FileName:" + files[i].getName());
+        }
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        poiMarkers = new RadiusMarkerClusterer(this);
+        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        // Floating Action Menu
+        ImageView icon = new ImageView(this); // Create an icon
+        icon.setImageDrawable(getResources().getDrawable(R.drawable.ic_menu_manage));
+        FloatingActionButton actionButton = new FloatingActionButton.Builder(this)
+                .setContentView(icon)
+                .build();
+        //actionButton.setBackgroundTintList(ColorStateList.valueOf(Color.MAGENTA));
+        SubActionButton.Builder itemBuilder = new SubActionButton.Builder(this);
+        // repeat many times:
+        ImageView itemIconLocation = new ImageView(this);
+        itemIconLocation.setImageDrawable(getResources().getDrawable(R.drawable.ic_menu_mylocation));
+        SubActionButton buttonLocation = itemBuilder.setContentView(itemIconLocation).build();
+        // layer
+        ImageView itemIconLayer = new ImageView(this);
+        itemIconLayer.setImageDrawable(getResources().getDrawable(R.drawable.ic_menu_mapmode));
+        SubActionButton buttonLayer = itemBuilder.setContentView(itemIconLayer).build();
+        // show col
+        ImageView itemIconShowCol = new ImageView(this);
+        itemIconShowCol.setImageDrawable(getResources().getDrawable(R.drawable.ic_menu_gallery));
+        SubActionButton buttonShowCol = itemBuilder.setContentView(itemIconShowCol).build();
+
+        FloatingActionMenu actionMenu = new FloatingActionMenu.Builder(this)
+                .addSubActionView(buttonLocation)
+                .addSubActionView(buttonLayer)
+                .addSubActionView(buttonShowCol)
+                .attachTo(actionButton)
+                .build();
+
+        buttonLayer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 createSourceSelectBox();
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
+            }
+        });
+        buttonShowCol.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                poiMarkers.setEnabled(!poiMarkers.isEnabled());
+                map.invalidate();
+            }
+        });
+        buttonLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Location lastKnownLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    addMarkerUserLocation(lastKnownLocation, false);
+                    map.invalidate();
+                    mLocationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, mLocationListener, null);
+                } catch (SecurityException e) {
+
+                }
+            }
+        });
+
+        findViewById(R.id.btn_save_route).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createSaveRouteBox();
+            }
+        });
+
+        findViewById(R.id.btn_cancel_route).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cancelRouting();
             }
         });
 
@@ -103,7 +221,7 @@ public class MainActivity extends BaseActivity
         //important! set your user agent to prevent getting banned from the osm servers
 
         ITileSource tileSourceBase = TileSourceFactory.getTileSource(
-                preferences.getString("tileSource","OpenTopoMap")
+                preferences.getString("tileSource", "OpenTopoMap")
         );
 
 
@@ -122,6 +240,8 @@ public class MainActivity extends BaseActivity
         TileSourceFactory.addTileSource();
         */
 
+        routingView = (LinearLayout) findViewById(R.id.routing_view);
+
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this);
 
         map = (MapView) findViewById(R.id.map);
@@ -134,10 +254,9 @@ public class MainActivity extends BaseActivity
         map.getOverlays().add(0, mapEventsOverlay);
 
         // cluster
-        RadiusMarkerClusterer poiMarkers = new RadiusMarkerClusterer(this);
         map.getOverlays().add(poiMarkers);
         Drawable clusterIconD = getResources().getDrawable(R.drawable.marker_cluster);
-        Bitmap clusterIcon = ((BitmapDrawable)clusterIconD).getBitmap();
+        Bitmap clusterIcon = ((BitmapDrawable) clusterIconD).getBitmap();
         poiMarkers.setIcon(clusterIcon);
 
 
@@ -145,43 +264,72 @@ public class MainActivity extends BaseActivity
         mapController.setCenter(startPoint);
 
         /*
-        GPS
-         */
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        try {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10, mLocationListener);
-        }catch ( SecurityException e ) {
-
-        }
-
-        /*
         SHOW COL FROM DB
          */
         OpenRunnerRouteDbHelper odb = new OpenRunnerRouteDbHelper(this);
-        for(ORPass pass : odb.getAllPasses() ){
+        for (ORPass pass : odb.getAllPasses()) {
             Marker startMarker = new Marker(map);
             startMarker.setIcon(getResources().getDrawable(R.drawable.marker_cluster));
             startMarker.setPosition(new GeoPoint(pass.getLat(), pass.getLng()));
-            startMarker.setTitle(pass.getName()+"\n"+pass.getAlt()+"m");
+            startMarker.setTitle(pass.getName() + "\n" + pass.getAlt() + "m");
             startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
             poiMarkers.add(startMarker);
-            Log.i("OPENRUNNER","FROM db " + pass.toString());
+            poiMarkers.setEnabled(false);
+            Log.i("OPENRUNNER", "FROM db " + pass.toString());
         }
 
     }
 
-    private void createSourceSelectBox(){
-        final CharSequence sources[] = new CharSequence[] {"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
+    private void createSaveRouteBox() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.title_box_save_route);
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+        builder.setPositiveButton(R.string.save_route, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Road road;
+                try {
+                    road = routingTask.get();
+                    FileOutputStream fos = null;
+                    fos = getApplicationContext().openFileOutput("testroute", Context.MODE_PRIVATE);
+                    ObjectOutputStream os = new ObjectOutputStream(fos);
+                    os.writeObject(new SerializableRoad(road.mRouteHigh));
+                    os.close();
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+
+    }
+
+    private void createSourceSelectBox() {
+        final CharSequence sources[] = new CharSequence[]{"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map source ?");
         builder.setItems(sources, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 editor = preferences.edit();
-                editor.putString("tileSource",sources[which].toString());
+                editor.putString("tileSource", sources[which].toString());
                 editor.commit();
                 ITileSource tileSourceBase = TileSourceFactory.getTileSource(
-                        preferences.getString("tileSource","OpenTopoMap")
+                        preferences.getString("tileSource", "OpenTopoMap")
                 );
                 map.setTileSource(tileSourceBase);
                 map.invalidate();
@@ -210,19 +358,23 @@ public class MainActivity extends BaseActivity
     }
 
 
-
-
     @Override
     public boolean singleTapConfirmedHelper(GeoPoint p) {
-        Toast.makeText(this, "Tapped", Toast.LENGTH_SHORT).show();
+        switch (tapState) {
+            case TAP_DEFAULT_MODE:
+                Toast.makeText(this, "Tapped", Toast.LENGTH_SHORT).show();
+                break;
+            case TAP_ROUTING_MODE:
+                this.addRoutingMarker(p);
+                break;
+        }
         return false;
     }
 
 
-
     @Override
-    public boolean longPressHelper(GeoPoint p) {
-        final CharSequence sources[] = new CharSequence[] {"Insert POI", "Start routing", "Go to"};
+    public boolean longPressHelper(final GeoPoint p) {
+        final CharSequence sources[] = new CharSequence[]{"Insert POI", "Start routing", "Go to"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Que faire ?");
         builder.setItems(sources, new DialogInterface.OnClickListener() {
@@ -230,13 +382,27 @@ public class MainActivity extends BaseActivity
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
+                        overpassTest();
                         Toast.makeText(getApplicationContext(), "TODO: insert marker in db", Toast.LENGTH_SHORT).show();
                         break;
                     case 1:
-                        Toast.makeText(getApplicationContext(), "TODO start routing", Toast.LENGTH_SHORT).show();
+                        tapState = TAP_ROUTING_MODE;
+                        waypoints = new ArrayList<GeoPoint>();
+                        routingMarkers = new ArrayList<Marker>();
+                        addRoutingMarker(p);
                         break;
-                    case 20:
-                        Toast.makeText(getApplicationContext(), "TODO go to ", Toast.LENGTH_SHORT).show();
+                    case 2:
+                        tapState = TAP_ROUTING_MODE;
+                        waypoints = new ArrayList<GeoPoint>();
+                        routingMarkers = new ArrayList<Marker>();
+                        try {
+                            Location lastKnownLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                            GeoPoint start = (new GeoPoint(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
+                            addRoutingMarker(start);
+                            addRoutingMarker(p);
+                        } catch (SecurityException e) {
+                            Toast.makeText(getApplicationContext(), "TODO go to ", Toast.LENGTH_SHORT).show();
+                        }
                         break;
                 }
 
@@ -253,11 +419,25 @@ public class MainActivity extends BaseActivity
         Toast.makeText(this, "long tapped", Toast.LENGTH_SHORT).show();
         return false;
         */
-        overpassTest();
+        //overpassTest();
         return false;
     }
 
-    private void overpassTest(){
+    private void addRoutingMarker(GeoPoint point) {
+        Toast.makeText(this, "add new point ", Toast.LENGTH_SHORT).show();
+        waypoints.add(point);
+        if (waypoints.size()>1) {
+            routingTask = new GraphHopperTask(map, routingView, waypoints).execute();
+        }
+        Marker startMarker = new Marker(map);
+        startMarker.setPosition(point);
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        routingMarkers.add(startMarker);
+        map.getOverlays().add(startMarker);
+        map.invalidate();
+    }
+
+    private void overpassTest() {
         new OverpassQueryTask(map.getBoundingBox()).execute();
         /*
         OverpassAPIProvider overpassProvider = new OverpassAPIProvider();
@@ -286,5 +466,23 @@ public class MainActivity extends BaseActivity
                 .build();
         Log.i("OPENRUNNER", query);
         */
+    }
+
+    public void cancelRouting(){
+        routingView.setVisibility(View.GONE);
+        map.getOverlays().removeAll(routingMarkers);
+        map.invalidate();
+        for(Overlay o :  map.getOverlays()) {
+            if(o instanceof Polyline){
+                if(((Polyline) o).getTitle() == GraphHopperTask.OVERLAY_TITLE) {
+                    Log.i("OVSKIMAP","remove");
+                    ((Polyline) o).setVisible(false);
+                    o.setEnabled(false);
+                    map.invalidate();
+                }
+            }
+            Log.i("OVSKIMAP",o.getClass() +"");
+        }
+        tapState = TAP_DEFAULT_MODE;
     }
 }

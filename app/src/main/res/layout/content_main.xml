@@ -12,6 +12,40 @@
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
+
+        <LinearLayout
+            android:id="@+id/routing_view"
+            android:layout_width="match_parent"
+            android:layout_height="77dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/routing_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="123dp"
+                android:layout_weight="1"
+                android:text="" />
+            <TextView
+                android:id="@+id/routing_elevation"
+                android:layout_width="wrap_content"
+                android:layout_height="123dp"
+                android:layout_weight="1"
+                android:text="" />
+            <Button
+                android:id="@+id/btn_save_route"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/save_route"
+                />
+            <Button
+                android:id="@+id/btn_cancel_route"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cancel_route"
+                />
+        </LinearLayout>
+
         <org.osmdroid.views.MapView android:id="@+id/map"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" />
