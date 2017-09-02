@@ -64,8 +64,8 @@ public class OpenRunnerHelper {
 
     public OpenRunnerHelper(Context ctx){
         pref = PreferenceManager.getDefaultSharedPreferences(ctx.getApplicationContext());
-        username = pref.getString("openrunner_username","ovskywalker");
-        password = pref.getString("openrunner_password","17c2509");
+        username = pref.getString("openrunner_username","");
+        password = pref.getString("openrunner_password","");
         Log.i("OPENRUNNER",username);
         CookieManager cookieManager = new CookieManager();
         cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
