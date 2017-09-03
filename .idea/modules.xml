@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/OvskiMap.iml" filepath="$PROJECT_DIR$/OvskiMap.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/cyclingmap.iml" filepath="$PROJECT_DIR$/cyclingmap.iml" />
       <module fileurl="file://$PROJECT_DIR$/ovskimap.iml" filepath="$PROJECT_DIR$/ovskimap.iml" />
     </modules>
   </component>

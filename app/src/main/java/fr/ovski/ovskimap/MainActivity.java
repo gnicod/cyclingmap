@@ -122,15 +122,17 @@ public class MainActivity extends BaseActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission. RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED) {
+            } else {
+
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 1);
+
+            }
         super.onCreate(savedInstanceState);
         Log.i("OVSKIMAP",getApplicationInfo().dataDir);
-        File directory = new File(getApplicationInfo().dataDir+"/files");
-        File[] files = directory.listFiles();
-        Log.d("Files", "Size: "+ files.length);
-        for (int i = 0; i < files.length; i++)
-        {
-            Log.d("Files", "FileName:" + files[i].getName());
-        }
+        Log.i("OVSKIMAP","here");
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
