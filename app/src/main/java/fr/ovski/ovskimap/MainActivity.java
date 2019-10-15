@@ -70,6 +70,8 @@ import fr.ovski.ovskimap.tasks.GraphHopperTask;
 import fr.ovski.ovskimap.tasks.OverpassQueryTask;
 import hu.supercluster.overpasser.library.query.OverpassQuery;
 
+import static android.content.Context.LOCATION_SERVICE;
+
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver {
 
@@ -384,7 +386,13 @@ public class MainActivity extends BaseActivity
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        overpassTest();
+                        //overpassTest();
+                        Marker startMarker = new Marker(map);
+                        startMarker.setPosition(p);
+                        startMarker.setTitle("Col de lol");
+                        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                        map.getOverlays().add(startMarker);
+                        map.invalidate();
                         Toast.makeText(getApplicationContext(), "TODO: insert marker in db", Toast.LENGTH_SHORT).show();
                         break;
                     case 1:
@@ -411,17 +419,6 @@ public class MainActivity extends BaseActivity
             }
         });
         builder.show();
-        /*
-        Marker startMarker = new Marker(map);
-        startMarker.setPosition(p);
-        startMarker.setTitle("Col de lol");
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        map.getOverlays().add(startMarker);
-        map.invalidate();
-        Toast.makeText(this, "long tapped", Toast.LENGTH_SHORT).show();
-        return false;
-        */
-        //overpassTest();
         return false;
     }
 
