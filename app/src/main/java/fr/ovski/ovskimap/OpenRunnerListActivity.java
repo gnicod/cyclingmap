@@ -1,6 +1,6 @@
 package fr.ovski.ovskimap;
 
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
 public class OpenRunnerListActivity extends AppCompatActivity {
