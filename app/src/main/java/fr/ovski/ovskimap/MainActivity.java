@@ -27,7 +27,6 @@ import com.firebase.ui.auth.IdpResponse;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton;
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
@@ -69,7 +68,6 @@ public class MainActivity extends BaseActivity
     private static final int RC_SIGN_IN = 6000;
     private MapView map;
     private FirebaseUser user;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private LinearLayout routingView;
 
     private RadiusMarkerClusterer poiMarkers;
@@ -147,8 +145,16 @@ public class MainActivity extends BaseActivity
         Log.i("OVSKIMAP","here");
 
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() != null) {
+            this.user = auth.getCurrentUser();
+            Log.println(Log.DEBUG, "AUTH", this.user.getDisplayName());
+        } else {
+            loginUI();
+        }
 
         poiMarkers = new RadiusMarkerClusterer(this);
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -223,13 +229,13 @@ public class MainActivity extends BaseActivity
             }
         });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         Context ctx = getApplicationContext();
         //important! set your user agent to prevent getting banned from the osm servers
@@ -254,11 +260,11 @@ public class MainActivity extends BaseActivity
         TileSourceFactory.addTileSource();
         */
 
-        routingView = (LinearLayout) findViewById(R.id.routing_view);
+        routingView = findViewById(R.id.routing_view);
 
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this);
 
-        map = (MapView) findViewById(R.id.map);
+        map = findViewById(R.id.map);
         map.setTileSource(tileSourceBase);
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
@@ -329,7 +335,7 @@ public class MainActivity extends BaseActivity
     }
 
     private void createSourceSelectBox() {
-        final CharSequence sources[] = new CharSequence[]{"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
+        final CharSequence[] sources = new CharSequence[]{"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map source ?");
         builder.setItems(sources, new DialogInterface.OnClickListener() {
@@ -337,7 +343,7 @@ public class MainActivity extends BaseActivity
             public void onClick(DialogInterface dialog, int which) {
                 editor = preferences.edit();
                 editor.putString("tileSource", sources[which].toString());
-                editor.commit();
+                editor.apply();
                 ITileSource tileSourceBase = TileSourceFactory.getTileSource(
                         preferences.getString("tileSource", "OpenTopoMap")
                 );
@@ -352,7 +358,7 @@ public class MainActivity extends BaseActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -384,7 +390,7 @@ public class MainActivity extends BaseActivity
 
     @Override
     public boolean longPressHelper(final GeoPoint p) {
-        final CharSequence sources[] = new CharSequence[]{"Insert POI", "Start routing", "Go to"};
+        final CharSequence[] sources = new CharSequence[]{"Insert POI", "Start routing", "Go to"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Que faire ?");
         builder.setItems(sources, new DialogInterface.OnClickListener() {
@@ -392,7 +398,7 @@ public class MainActivity extends BaseActivity
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        loginUI();
+                        //loginUI();
                         //overpassTest();
                         Marker startMarker = new Marker(map);
                         startMarker.setPosition(p);
