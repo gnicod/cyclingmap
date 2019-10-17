@@ -58,9 +58,11 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import fr.ovski.ovskimap.markers.MarkerManager;
 import fr.ovski.ovskimap.models.ORPass;
 import fr.ovski.ovskimap.tasks.GraphHopperTask;
 import fr.ovski.ovskimap.tasks.OverpassQueryTask;
+import kotlin.Unit;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver {
@@ -73,6 +75,7 @@ public class MainActivity extends BaseActivity
     private RadiusMarkerClusterer poiMarkers;
 
     private LocationManager mLocationManager;
+    private MarkerManager markerManager = new MarkerManager();
 
     private static final int TAP_DEFAULT_MODE = 0;
     private static final int TAP_ROUTING_MODE = 1;
@@ -122,6 +125,7 @@ public class MainActivity extends BaseActivity
             if (resultCode == RESULT_OK) {
                 // Successfully signed in
                 this.user = FirebaseAuth.getInstance().getCurrentUser();
+                this.markerManager.setUser(user);
                 Log.println(Log.DEBUG, "ovski", "user logged");
             } else {
                 Log.println(Log.DEBUG, "ovski", "user not logged");
@@ -149,8 +153,11 @@ public class MainActivity extends BaseActivity
         setSupportActionBar(toolbar);
 
         FirebaseAuth auth = FirebaseAuth.getInstance();
+
+        Log.d("AUTH", "ici");
         if (auth.getCurrentUser() != null) {
             this.user = auth.getCurrentUser();
+            markerManager.setUser(this.user);
             Log.println(Log.DEBUG, "AUTH", this.user.getDisplayName());
         } else {
             loginUI();
@@ -391,8 +398,9 @@ public class MainActivity extends BaseActivity
     @Override
     public boolean longPressHelper(final GeoPoint p) {
         final CharSequence[] sources = new CharSequence[]{"Insert POI", "Start routing", "Go to"};
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Que faire ?");
+        final Context ctx = getApplicationContext();
         builder.setItems(sources, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -400,13 +408,20 @@ public class MainActivity extends BaseActivity
                     case 0:
                         //loginUI();
                         //overpassTest();
-                        Marker startMarker = new Marker(map);
-                        startMarker.setPosition(p);
-                        startMarker.setTitle("Col de lol");
-                        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                        map.getOverlays().add(startMarker);
-                        map.invalidate();
-                        Toast.makeText(getApplicationContext(), "TODO: insert marker in db", Toast.LENGTH_SHORT).show();
+
+                        markerManager.createMarker(
+                                MainActivity.this,
+                                new com.google.firebase.firestore.GeoPoint(p.getLongitude(), p.getLatitude()),
+                                (name, group)-> {
+                                    Marker startMarker = new Marker(map);
+                                    startMarker.setPosition(p);
+                                    startMarker.setTitle(name);
+                                    startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                                    map.getOverlays().add(startMarker);
+                                    map.invalidate();
+                                    return Unit.INSTANCE;
+                                });
+                        //Toast.makeText(getApplicationContext(), "TODO: insert marker in db", Toast.LENGTH_SHORT).show();
                         break;
                     case 1:
                         tapState = TAP_ROUTING_MODE;
