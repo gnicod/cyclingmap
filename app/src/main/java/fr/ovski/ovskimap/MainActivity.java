@@ -154,15 +154,6 @@ public class MainActivity extends BaseActivity
 
         FirebaseAuth auth = FirebaseAuth.getInstance();
 
-        Log.d("AUTH", "ici");
-        if (auth.getCurrentUser() != null) {
-            this.user = auth.getCurrentUser();
-            markerManager.setUser(this.user);
-            Log.println(Log.DEBUG, "AUTH", this.user.getDisplayName());
-        } else {
-            loginUI();
-        }
-
         poiMarkers = new RadiusMarkerClusterer(this);
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -278,6 +269,8 @@ public class MainActivity extends BaseActivity
         IMapController mapController = map.getController();
         mapController.setZoom(12);
 
+
+
         map.getOverlays().add(0, mapEventsOverlay);
 
         // cluster
@@ -285,6 +278,17 @@ public class MainActivity extends BaseActivity
         Drawable clusterIconD = getResources().getDrawable(R.drawable.marker_cluster);
         Bitmap clusterIcon = ((BitmapDrawable) clusterIconD).getBitmap();
         poiMarkers.setIcon(clusterIcon);
+
+        if (auth.getCurrentUser() != null) {
+            this.user = auth.getCurrentUser();
+            markerManager.setUser(this.user);
+            // TODO make function userSetted
+            markerManager.getAllMarkers(map);
+            map.invalidate();
+            Log.println(Log.DEBUG, "AUTH", this.user.getDisplayName());
+        } else {
+            loginUI();
+        }
 
 
         GeoPoint startPoint = new GeoPoint(45.65, 5.94);
@@ -397,7 +401,7 @@ public class MainActivity extends BaseActivity
 
     @Override
     public boolean longPressHelper(final GeoPoint p) {
-        final CharSequence[] sources = new CharSequence[]{"Insert POI", "Start routing", "Go to"};
+        final CharSequence[] sources = new CharSequence[]{"Insert POI", "Start routing", "Go to", "test"};
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Que faire ?");
         final Context ctx = getApplicationContext();
@@ -406,12 +410,10 @@ public class MainActivity extends BaseActivity
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        //loginUI();
                         //overpassTest();
-
                         markerManager.createMarker(
                                 MainActivity.this,
-                                new com.google.firebase.firestore.GeoPoint(p.getLongitude(), p.getLatitude()),
+                                new com.google.firebase.firestore.GeoPoint(p.getLatitude(), p.getLongitude()),
                                 (name, group)-> {
                                     Marker startMarker = new Marker(map);
                                     startMarker.setPosition(p);
@@ -442,6 +444,9 @@ public class MainActivity extends BaseActivity
                             Toast.makeText(getApplicationContext(), "TODO go to ", Toast.LENGTH_SHORT).show();
                         }
                         break;
+                    case 3:
+                        overpassTest();
+                        break;
                 }
 
             }
@@ -457,7 +462,7 @@ public class MainActivity extends BaseActivity
                 new AuthUI.IdpConfig.PhoneBuilder().build(),
                 new AuthUI.IdpConfig.GoogleBuilder().build());
 
-// Create and launch sign-in intent
+        // Create and launch sign-in intent
         startActivityForResult(
                 AuthUI.getInstance()
                         .createSignInIntentBuilder()
@@ -480,10 +485,12 @@ public class MainActivity extends BaseActivity
     }
 
     private void overpassTest() {
-        new OverpassQueryTask(map.getBoundingBox()).execute();
+        Log.i("OVERPASS", map.getBoundingBox().toString());
+        new OverpassQueryTask(map, map.getBoundingBox()).execute();
         /*
         OverpassAPIProvider overpassProvider = new OverpassAPIProvider();
-        String url = overpassProvider.urlForTagSearchKml("highway=speed_camera", map.getBoundingBox(), 500, 30);
+        overpassProvider.setService("https://overpass-api.de/api/interpreter");
+        String url = overpassProvider.urlForTagSearchKml("amenity=drinking_water", map.getBoundingBox(), 500, 30);
         KmlDocument kmlDocument = new KmlDocument();
 
 

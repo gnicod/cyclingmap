@@ -1,10 +1,7 @@
 package fr.ovski.ovskimap.tasks;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.view.View;
 
 import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.bonuspack.location.OverpassAPIProvider;
@@ -15,36 +12,42 @@ import org.osmdroid.views.overlay.FolderOverlay;
 
 import java.util.ArrayList;
 
-import fr.ovski.ovskimap.R;
-
 /**
  * Created by ovski on 26/03/17.
  */
 
-public class OverpassQueryTask extends AsyncTask<Void, Integer, ArrayList> {
+public class OverpassQueryTask extends AsyncTask<Void, Integer, FolderOverlay> {
 
-    BoundingBox bb;
+    private MapView map;
+    private BoundingBox bb;
 
-    public OverpassQueryTask(BoundingBox map) {
+    public OverpassQueryTask(MapView map, BoundingBox bb) {
         this.bb = bb;
-
+        this.map = map;
     }
 
     @Override
-    protected ArrayList doInBackground(Void... params) {
+    protected FolderOverlay doInBackground(Void... params) {
 
         OverpassAPIProvider overpassProvider = new OverpassAPIProvider();
-        String url = overpassProvider.urlForTagSearchKml("highway=speed_camera", bb, 500, 30);
+        overpassProvider.setService("https://overpass-api.de/api/interpreter");
+        Log.i("Overpassquery", this.bb.toString());
+        String url = overpassProvider.urlForTagSearchKml("amenity=drinking_water", this.bb, 500, 30);
 
         ArrayList<POI> pois = overpassProvider.getPOIsFromUrl(url);
         for( POI poi : pois){
             Log.i("OPENRUNNER", poi.toString());
         }
 
-        /*boolean ok = overpassProvider.addInKmlFolder(kmlDocument.mKmlRoot, url);
+        KmlDocument kmlDocument = new KmlDocument();
+        boolean ok = overpassProvider.addInKmlFolder(kmlDocument.mKmlRoot, url);
         FolderOverlay kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, null, kmlDocument);
-        map.getOverlays().add(kmlOverlay);
-        */
-        return null;
+        return kmlOverlay;
+    }
+
+    @Override
+    protected void onPostExecute(FolderOverlay folderOverlay) {
+        super.onPostExecute(folderOverlay);
+        map.getOverlays().add(folderOverlay);
     }
 }
