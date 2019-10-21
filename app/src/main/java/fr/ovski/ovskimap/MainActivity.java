@@ -43,6 +43,10 @@ import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.compass.CompassOverlay;
+import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -157,6 +161,7 @@ public class MainActivity extends BaseActivity
         poiMarkers = new RadiusMarkerClusterer(this);
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
+
         // Floating Action Menu
         ImageView icon = new ImageView(this); // Create an icon
         icon.setImageDrawable(getResources().getDrawable(R.drawable.ic_menu_manage));
@@ -270,8 +275,18 @@ public class MainActivity extends BaseActivity
         mapController.setZoom(12);
 
 
+        GpsMyLocationProvider gpsMyLocationProvider = new GpsMyLocationProvider(MainActivity.this.getBaseContext());
+        gpsMyLocationProvider.setLocationUpdateMinDistance(100); // [m]  // Set the minimum distance for location updates
+        gpsMyLocationProvider.setLocationUpdateMinTime(10000);   // [ms] // Set the minimum time interval for location updates
+        MyLocationNewOverlay mMyLocationOverlay = new MyLocationNewOverlay(gpsMyLocationProvider, map);
+        mMyLocationOverlay.setDrawAccuracyEnabled(true);
+        CompassOverlay mCompassOverlay = new CompassOverlay(this, new InternalCompassOrientationProvider(this), map);
 
+        mCompassOverlay.enableCompass();
+        mMyLocationOverlay.enableMyLocation();
         map.getOverlays().add(0, mapEventsOverlay);
+        map.getOverlays().add(mCompassOverlay);
+        map.getOverlays().add(mMyLocationOverlay);
 
         // cluster
         map.getOverlays().add(poiMarkers);
