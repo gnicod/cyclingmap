@@ -4,19 +4,25 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.GeomagneticField;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
+import android.view.Surface;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -35,15 +41,20 @@ import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer;
 import org.osmdroid.bonuspack.routing.Road;
 import org.osmdroid.events.MapEventsReceiver;
+import org.osmdroid.tileprovider.MapTileProviderBasic;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.TilesOverlay;
 import org.osmdroid.views.overlay.compass.CompassOverlay;
+import org.osmdroid.views.overlay.compass.IOrientationConsumer;
+import org.osmdroid.views.overlay.compass.IOrientationProvider;
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
@@ -63,13 +74,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import fr.ovski.ovskimap.markers.MarkerManager;
-import fr.ovski.ovskimap.models.ORPass;
 import fr.ovski.ovskimap.tasks.GraphHopperTask;
 import fr.ovski.ovskimap.tasks.OverpassQueryTask;
 import kotlin.Unit;
 
 public class MainActivity extends BaseActivity
-        implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver {
+        implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver, IOrientationConsumer ,LocationListener{
 
     private static final int RC_SIGN_IN = 6000;
     private MapView map;
@@ -91,19 +101,11 @@ public class MainActivity extends BaseActivity
     ArrayList<Marker> routingMarkers;
     private AsyncTask<Object, Object, Road> routingTask;
 
-    private void addMarkerUserLocation(Location location, boolean current) {
-        Marker startMarker = new Marker(map);
-        startMarker.setIcon(getResources().getDrawable(R.drawable.marker_default_focused_base));
-        startMarker.setPosition(new GeoPoint(location.getLatitude(), location.getLongitude()));
-        startMarker.setTitle("ICI");
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        map.getOverlays().add(startMarker);
-    }
 
     private final LocationListener mLocationListener = new LocationListener() {
         @Override
         public void onLocationChanged(final Location location) {
-            addMarkerUserLocation(location, true);
+            // center on position ?
         }
 
         @Override
@@ -120,6 +122,7 @@ public class MainActivity extends BaseActivity
 
         }
     };
+    private int deviceOrientation = 0;
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -137,6 +140,42 @@ public class MainActivity extends BaseActivity
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!"Android-x86".equalsIgnoreCase(Build.BRAND)) {
+
+
+            //lock the device in current screen orientation
+            int orientation;
+            int rotation = ((WindowManager) this.getSystemService(
+                    Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+            switch (rotation) {
+                case Surface.ROTATION_0:
+                    orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+                    this.deviceOrientation = 0;
+                    screen_orientation = "ROTATION_0 SCREEN_ORIENTATION_PORTRAIT";
+                    break;
+                case Surface.ROTATION_90:
+                    this.deviceOrientation = 90;
+                    orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+                    screen_orientation = "ROTATION_90 SCREEN_ORIENTATION_LANDSCAPE";
+                    break;
+                case Surface.ROTATION_180:
+                    this.deviceOrientation = 180;
+                    orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+                    screen_orientation = "ROTATION_180 SCREEN_ORIENTATION_REVERSE_PORTRAIT";
+                    break;
+                default:
+                    this.deviceOrientation = 270;
+                    orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+                    screen_orientation = "ROTATION_270 SCREEN_ORIENTATION_REVERSE_LANDSCAPE";
+                    break;
+            }
+
+            this.setRequestedOrientation(orientation);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -200,8 +239,7 @@ public class MainActivity extends BaseActivity
         buttonShowCol.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                poiMarkers.setEnabled(!poiMarkers.isEnabled());
-                map.invalidate();
+                createLayersSelectBox();
             }
         });
         buttonLocation.setOnClickListener(new View.OnClickListener() {
@@ -209,7 +247,7 @@ public class MainActivity extends BaseActivity
             public void onClick(View v) {
                 try {
                     Location lastKnownLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    addMarkerUserLocation(lastKnownLocation, false);
+                    map.getController().setCenter(new GeoPoint(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
                     map.invalidate();
                     mLocationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, mLocationListener, null);
                 } catch (SecurityException e) {
@@ -268,7 +306,7 @@ public class MainActivity extends BaseActivity
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this);
 
         map = findViewById(R.id.map);
-        map.setTileSource(tileSourceBase);
+        //map.setTileSource(tileSourceBase);
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
         IMapController mapController = map.getController();
@@ -306,23 +344,13 @@ public class MainActivity extends BaseActivity
         }
 
 
+
+
+
+
+
         GeoPoint startPoint = new GeoPoint(45.65, 5.94);
         mapController.setCenter(startPoint);
-
-        /*
-        SHOW COL FROM DB
-         */
-        OpenRunnerRouteDbHelper odb = new OpenRunnerRouteDbHelper(this);
-        for (ORPass pass : odb.getAllPasses()) {
-            Marker startMarker = new Marker(map);
-            startMarker.setIcon(getResources().getDrawable(R.drawable.marker_cluster));
-            startMarker.setPosition(new GeoPoint(pass.getLat(), pass.getLng()));
-            startMarker.setTitle(pass.getName() + "\n" + pass.getAlt() + "m");
-            startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            poiMarkers.add(startMarker);
-            poiMarkers.setEnabled(false);
-            Log.i("OPENRUNNER", "FROM db " + pass.toString());
-        }
 
     }
 
@@ -360,23 +388,55 @@ public class MainActivity extends BaseActivity
 
     }
 
+    public void createLayersSelectBox() {
+        String[] listItems = {"Hiking", "Cycling"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Choose items");
+
+        boolean[] checkedItems = new boolean[]{false, false}; //this will checked the items when user open the dialog
+        builder.setMultiChoiceItems(listItems, checkedItems, (dialogInterface, i, b) -> {
+            // Add tiles layer with custom tile source
+            Log.i("DIALOG", String.valueOf(i) + "=>" + b);
+            String clicked = listItems[i];
+            final MapTileProviderBasic tileProvider = new MapTileProviderBasic(this);
+            final ITileSource tileSource = new XYTileSource(clicked, 3, 18, 256, ".png",
+                    new String[]{"https://tile.waymarkedtrails.org/" + clicked.toLowerCase() + "/"});
+            tileProvider.setTileSource(tileSource);
+            final TilesOverlay tilesOverlay = new TilesOverlay(tileProvider, this.getBaseContext());
+            tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+            if (b) {
+                map.getOverlays().add(tilesOverlay);
+            } else {
+                map.getOverlays().remove(tilesOverlay);
+            }
+        });
+
+        builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
     private void createSourceSelectBox() {
+
         final CharSequence[] sources = new CharSequence[]{"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map source ?");
-        builder.setItems(sources, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                editor = preferences.edit();
-                editor.putString("tileSource", sources[which].toString());
-                editor.apply();
-                ITileSource tileSourceBase = TileSourceFactory.getTileSource(
-                        preferences.getString("tileSource", "OpenTopoMap")
-                );
-                map.setTileSource(tileSourceBase);
-                map.invalidate();
+        builder.setItems(sources, (dialog, which) -> {
+            editor = preferences.edit();
+            editor.putString("tileSource", sources[which].toString());
+            editor.apply();
+            ITileSource tileSourceBase = TileSourceFactory.getTileSource(
+                    preferences.getString("tileSource", "OpenTopoMap")
+            );
+            map.setTileSource(tileSourceBase);
+            map.invalidate();
 
-            }
         });
         builder.show();
     }
@@ -549,4 +609,102 @@ public class MainActivity extends BaseActivity
         }
         tapState = TAP_DEFAULT_MODE;
     }
+
+
+    Float trueNorth = 0f;
+    float gpsspeed;
+    float gpsbearing;
+    float lat = 0;
+    float lon = 0;
+    float alt = 0;
+    long timeOfFix = 0;
+    String screen_orientation = "";
+
+    @Override
+    public void onLocationChanged(Location location) {
+        if (map == null)
+            return;
+
+        gpsbearing = location.getBearing();
+        gpsspeed = location.getSpeed();
+        lat = (float) location.getLatitude();
+        lon = (float) location.getLongitude();
+        alt = (float) location.getAltitude(); //meters
+        timeOfFix = location.getTime();
+
+
+        //use gps bearing instead of the compass
+
+        float t = (360 - gpsbearing - this.deviceOrientation);
+        if (t < 0) {
+            t += 360;
+        }
+        if (t > 360) {
+            t -= 360;
+        }
+        //help smooth everything out
+        t = (int) t;
+        t = t / 5;
+        t = (int) t;
+        t = t * 5;
+
+        if (gpsspeed >= 0.01) {
+            map.setMapOrientation(t);
+            //otherwise let the compass take over
+        }
+
+    }
+
+    @Override
+    public void onStatusChanged(String s, int i, Bundle bundle) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String s) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String s) {
+
+    }
+
+
+    @Override
+    public void onOrientationChanged(float orientation, IOrientationProvider source) {
+        Log.i("OVSKI", "orientation changed");
+        //note, on devices without a compass this never fires...
+
+        //only use the compass bit if we aren't moving, since gps is more accurate when we are moving
+        if (gpsspeed < 0.01) {
+            GeomagneticField gf = new GeomagneticField(lat, lon, alt, timeOfFix);
+            trueNorth = orientation + gf.getDeclination();
+            gf = null;
+            synchronized (trueNorth) {
+                if (trueNorth > 360.0f) {
+                    trueNorth = trueNorth - 360.0f;
+                }
+                float actualHeading = 0f;
+
+                //this part adjusts the desired map rotation based on device orientation and compass heading
+                float t = (360 - trueNorth - this.deviceOrientation);
+                if (t < 0) {
+                    t += 360;
+                }
+                if (t > 360) {
+                    t -= 360;
+                }
+                actualHeading = t;
+                //help smooth everything out
+                t = (int) t;
+                t = t / 5;
+                t = (int) t;
+                t = t * 5;
+                map.setMapOrientation(t);
+            }
+        }
+    }
+
+
 }
