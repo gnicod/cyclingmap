@@ -87,11 +87,6 @@ class MarkerManager {
                         Log.i(TAG, lng.toString())
                         val geopoint = org.osmdroid.util.GeoPoint(lat!!, lng!!)
                         addMarkerToMap(map, title!!, geopoint)
-                        /*
-                        Log.d(TAG, "${document.id} => ${document.data}")
-                        val city = documentSnapshot.toObject(City::class.java)
-                        val d = document.data as HashMap<String, String>
-                         */
                     }}
                 .addOnFailureListener { e -> Log.w(TAG, "Error reading document", e) }
 

@@ -44,7 +44,6 @@ import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.MapTileProviderBasic;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
@@ -73,6 +72,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import fr.ovski.ovskimap.layers.LayerManager;
+import fr.ovski.ovskimap.layers.LayerOverlay;
 import fr.ovski.ovskimap.markers.MarkerManager;
 import fr.ovski.ovskimap.tasks.GraphHopperTask;
 import fr.ovski.ovskimap.tasks.OverpassQueryTask;
@@ -90,6 +91,7 @@ public class MainActivity extends BaseActivity
 
     private LocationManager mLocationManager;
     private MarkerManager markerManager = new MarkerManager();
+    private LayerManager layerManager = new LayerManager();
 
     private static final int TAP_DEFAULT_MODE = 0;
     private static final int TAP_ROUTING_MODE = 1;
@@ -306,7 +308,7 @@ public class MainActivity extends BaseActivity
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this);
 
         map = findViewById(R.id.map);
-        //map.setTileSource(tileSourceBase);
+        map.setTileSource(tileSourceBase);
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
         IMapController mapController = map.getController();
@@ -389,35 +391,38 @@ public class MainActivity extends BaseActivity
     }
 
     public void createLayersSelectBox() {
-        String[] listItems = {"Hiking", "Cycling"};
+        String[] listItems = layerManager.getLayers().keySet().toArray(new String[0]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Choose items");
 
-        boolean[] checkedItems = new boolean[]{false, false}; //this will checked the items when user open the dialog
+
+        boolean[] checkedItems = new boolean[layerManager.getLayers().size()];
+        int index = 0;
+        for (String key : layerManager.getLayers().keySet()) {
+            checkedItems[index] = layerManager.getLayers().get(key).getState();
+            index ++;
+        }
         builder.setMultiChoiceItems(listItems, checkedItems, (dialogInterface, i, b) -> {
-            // Add tiles layer with custom tile source
-            Log.i("DIALOG", String.valueOf(i) + "=>" + b);
             String clicked = listItems[i];
-            final MapTileProviderBasic tileProvider = new MapTileProviderBasic(this);
-            final ITileSource tileSource = new XYTileSource(clicked, 3, 18, 256, ".png",
-                    new String[]{"https://tile.waymarkedtrails.org/" + clicked.toLowerCase() + "/"});
-            tileProvider.setTileSource(tileSource);
-            final TilesOverlay tilesOverlay = new TilesOverlay(tileProvider, this.getBaseContext());
-            tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+            LayerOverlay checkedLayer = layerManager.getLayers().get(clicked);
             if (b) {
+                final MapTileProviderBasic tileProvider = new MapTileProviderBasic(this);
+                final ITileSource tileSource = layerManager.getTileSource(clicked);
+                tileProvider.setTileSource(tileSource);
+                final TilesOverlay tilesOverlay = new TilesOverlay(tileProvider, this.getBaseContext());
+                tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+                checkedLayer.setOverlay(tilesOverlay);
+                layerManager.getLayers().put(clicked, checkedLayer.setSate(true));
                 map.getOverlays().add(tilesOverlay);
             } else {
-                map.getOverlays().remove(tilesOverlay);
+                map.getOverlays().remove(checkedLayer.getOverlay());
+                layerManager.getLayers().put(clicked, checkedLayer.setSate(false));
             }
+        }).setPositiveButton("Done", (dialog, which) -> {
+
         });
 
-        builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
         AlertDialog dialog = builder.create();
         dialog.show();
     }
