@@ -1,7 +1,5 @@
 package fr.ovski.ovskimap.tasks;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
@@ -15,7 +13,6 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Polyline;
 
-import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -38,14 +35,14 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
         return road;
     }
 
-    public GraphHopperTask( MapView map, LinearLayout routingView, ArrayList<GeoPoint> waypoints) {
+    public GraphHopperTask(MapView map, LinearLayout routingView, String apiKey, ArrayList<GeoPoint> waypoints) {
         this.map = map;
         this.routingView = routingView;
         textDistance = (TextView) routingView.findViewById(R.id.routing_distance);
         textElevation = (TextView) routingView.findViewById(R.id.routing_elevation);
-        roadManager = new GraphHopperRoadManager("7c5d934b-b93d-48f0-871f-1f99154cdcdb",false);
+        roadManager = new GraphHopperRoadManager(apiKey,false);
         roadManager.setElevation(true);
-        roadManager.addRequestOption("vehicle=racingbike");
+        roadManager.addRequestOption("vehicle=hike");
         this.waypoints = waypoints;
     }
 

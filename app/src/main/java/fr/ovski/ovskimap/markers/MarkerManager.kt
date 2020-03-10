@@ -3,6 +3,7 @@ package fr.ovski.ovskimap.markers
 import android.app.AlertDialog
 import android.content.Context
 import android.util.Log
+import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import com.google.firebase.auth.FirebaseUser
@@ -17,6 +18,7 @@ class MarkerManager {
     private val TAG: String? = "MARKERMANAGER"
     private val db = FirebaseFirestore.getInstance()
     private var user: FirebaseUser? = null
+    private var groups: ArrayList<String> = arrayListOf();
 
     fun setUser(user: FirebaseUser) {
         this.user = user
@@ -61,6 +63,11 @@ class MarkerManager {
                         val alertDialog = dialog as AlertDialog
                         val nameWidget = alertDialog.findViewById<EditText>(R.id.popup_marker_name)
                         val groupWidget = alertDialog.findViewById<AutoCompleteTextView>(R.id.popup_marker_group)
+                        val array = arrayOfNulls<String>(groups.size)
+                        arrayOf(groups.size)
+                        val adapter = ArrayAdapter<String>(c, android.R.layout.select_dialog_item, groups.toArray(array))
+                        groupWidget.setAdapter(adapter);
+                        Log.i(TAG, groups.toString());
                         Log.i(TAG, "text: " + nameWidget.text.toString())
                         Log.i(TAG, "text: " + groupWidget.text.toString())
                         Log.i(TAG, "positive button clicked")
@@ -82,10 +89,11 @@ class MarkerManager {
                         val group = document.getString("group")
                         val lat = document.getDouble("lat")
                         val lng = document.getDouble("lng")
-                        Log.i(TAG, title)
-                        Log.i(TAG, lat.toString())
-                        Log.i(TAG, lng.toString())
                         val geopoint = org.osmdroid.util.GeoPoint(lat!!, lng!!)
+                        if (group != null) {
+                            Log.i(TAG, group)
+                            groups.add(group)
+                        }
                         addMarkerToMap(map, title!!, geopoint)
                     }}
                 .addOnFailureListener { e -> Log.w(TAG, "Error reading document", e) }

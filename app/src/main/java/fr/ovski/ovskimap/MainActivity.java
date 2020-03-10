@@ -44,6 +44,7 @@ import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.MapTileProviderBasic;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.tileprovider.tilesource.bing.BingMapTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
@@ -95,6 +96,7 @@ public class MainActivity extends BaseActivity
 
     private static final int TAP_DEFAULT_MODE = 0;
     private static final int TAP_ROUTING_MODE = 1;
+    private static final String LOG_TAG = "LOG_TAG";
 
     private int tapState = TAP_DEFAULT_MODE;
 
@@ -104,26 +106,7 @@ public class MainActivity extends BaseActivity
     private AsyncTask<Object, Object, Road> routingTask;
 
 
-    private final LocationListener mLocationListener = new LocationListener() {
-        @Override
-        public void onLocationChanged(final Location location) {
-            // center on position ?
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-    };
+    private final LocationListener mLocationListener = this;
     private int deviceOrientation = 0;
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -135,9 +118,9 @@ public class MainActivity extends BaseActivity
                 // Successfully signed in
                 this.user = FirebaseAuth.getInstance().getCurrentUser();
                 this.markerManager.setUser(user);
-                Log.println(Log.DEBUG, "ovski", "user logged");
+                Log.println(Log.DEBUG, LOG_TAG, "user logged");
             } else {
-                Log.println(Log.DEBUG, "ovski", "user not logged");
+                Log.println(Log.DEBUG, LOG_TAG, "user not logged");
             }
         }
     }
@@ -146,8 +129,6 @@ public class MainActivity extends BaseActivity
     protected void onResume() {
         super.onResume();
         if (!"Android-x86".equalsIgnoreCase(Build.BRAND)) {
-
-
             //lock the device in current screen orientation
             int orientation;
             int rotation = ((WindowManager) this.getSystemService(
@@ -190,8 +171,8 @@ public class MainActivity extends BaseActivity
 
             }
         super.onCreate(savedInstanceState);
-        Log.i("OVSKIMAP",getApplicationInfo().dataDir);
-        Log.i("OVSKIMAP","here");
+        Log.i(LOG_TAG,getApplicationInfo().dataDir);
+        Log.i(LOG_TAG,"here");
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -283,11 +264,10 @@ public class MainActivity extends BaseActivity
         Context ctx = getApplicationContext();
         //important! set your user agent to prevent getting banned from the osm servers
 
+        initExtraTilesSources();
         ITileSource tileSourceBase = TileSourceFactory.getTileSource(
                 preferences.getString("tileSource", "OpenTopoMap")
         );
-
-
 
         /*
         IGN GEOPORTAIL LAYER
@@ -303,6 +283,9 @@ public class MainActivity extends BaseActivity
         TileSourceFactory.addTileSource();
         */
 
+
+
+
         routingView = findViewById(R.id.routing_view);
 
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this);
@@ -315,9 +298,10 @@ public class MainActivity extends BaseActivity
         mapController.setZoom(12);
 
 
+
         GpsMyLocationProvider gpsMyLocationProvider = new GpsMyLocationProvider(MainActivity.this.getBaseContext());
-        gpsMyLocationProvider.setLocationUpdateMinDistance(100); // [m]  // Set the minimum distance for location updates
-        gpsMyLocationProvider.setLocationUpdateMinTime(10000);   // [ms] // Set the minimum time interval for location updates
+        gpsMyLocationProvider.setLocationUpdateMinDistance(3); // [m]  // Set the minimum distance for location updates
+        gpsMyLocationProvider.setLocationUpdateMinTime(300);   // [ms] // Set the minimum time interval for location updates
         MyLocationNewOverlay mMyLocationOverlay = new MyLocationNewOverlay(gpsMyLocationProvider, map);
         mMyLocationOverlay.setDrawAccuracyEnabled(true);
         CompassOverlay mCompassOverlay = new CompassOverlay(this, new InternalCompassOrientationProvider(this), map);
@@ -340,20 +324,27 @@ public class MainActivity extends BaseActivity
             // TODO make function userSetted
             markerManager.getAllMarkers(map);
             map.invalidate();
-            Log.println(Log.DEBUG, "AUTH", this.user.getDisplayName());
+            Log.println(Log.DEBUG, LOG_TAG, this.user.getDisplayName());
         } else {
             loginUI();
         }
 
-
-
-
-
-
-
         GeoPoint startPoint = new GeoPoint(45.65, 5.94);
         mapController.setCenter(startPoint);
+    }
 
+    private void initExtraTilesSources() {
+        // retrieve BING_KEY variable stored in manifest
+        BingMapTileSource.retrieveBingKey(this);
+        BingMapTileSource bingAerial = new BingMapTileSource(null);
+        bingAerial.setStyle(BingMapTileSource.IMAGERYSET_AERIAL);
+        TileSourceFactory.addTileSource(bingAerial);
+        BingMapTileSource bingAerialLabel = new BingMapTileSource(null);
+        bingAerialLabel.setStyle(BingMapTileSource.IMAGERYSET_AERIALWITHLABELS);
+        TileSourceFactory.addTileSource(bingAerialLabel);
+        BingMapTileSource bing = new BingMapTileSource(null);
+        bing.setStyle(BingMapTileSource.IMAGERYSET_ROAD);
+        TileSourceFactory.addTileSource(bing);
     }
 
     private void createSaveRouteBox() {
@@ -428,8 +419,7 @@ public class MainActivity extends BaseActivity
     }
 
     private void createSourceSelectBox() {
-
-        final CharSequence[] sources = new CharSequence[]{"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap"};
+        final CharSequence[] sources = new CharSequence[]{"Mapnik", "CycleMap", "OpenTopoMap", "HikeBikeMap", "BingMapsAerial", "BingMapsAerialWithLabels", "BingMapsRoad"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map source ?");
         builder.setItems(sources, (dialog, which) -> {
@@ -437,7 +427,7 @@ public class MainActivity extends BaseActivity
             editor.putString("tileSource", sources[which].toString());
             editor.apply();
             ITileSource tileSourceBase = TileSourceFactory.getTileSource(
-                    preferences.getString("tileSource", "OpenTopoMap")
+                preferences.getString("tileSource", "OpenTopoMap")
             );
             map.setTileSource(tileSourceBase);
             map.invalidate();
@@ -503,7 +493,6 @@ public class MainActivity extends BaseActivity
                                     map.invalidate();
                                     return Unit.INSTANCE;
                                 });
-                        //Toast.makeText(getApplicationContext(), "TODO: insert marker in db", Toast.LENGTH_SHORT).show();
                         break;
                     case 1:
                         tapState = TAP_ROUTING_MODE;
@@ -553,8 +542,9 @@ public class MainActivity extends BaseActivity
     private void addRoutingMarker(GeoPoint point) {
         Toast.makeText(this, "add new point ", Toast.LENGTH_SHORT).show();
         waypoints.add(point);
+        String apiKey = this.getString(R.string.graphopper_key);
         if (waypoints.size()>1) {
-            routingTask = new GraphHopperTask(map, routingView, waypoints).execute();
+            routingTask = new GraphHopperTask(map, routingView, apiKey, waypoints).execute();
         }
         Marker startMarker = new Marker(map);
         startMarker.setPosition(point);
@@ -604,13 +594,13 @@ public class MainActivity extends BaseActivity
         for(Overlay o :  map.getOverlays()) {
             if(o instanceof Polyline){
                 if(((Polyline) o).getTitle() == GraphHopperTask.OVERLAY_TITLE) {
-                    Log.i("OVSKIMAP","remove");
+                    Log.i(LOG_TAG,"remove");
                     ((Polyline) o).setVisible(false);
                     o.setEnabled(false);
                     map.invalidate();
                 }
             }
-            Log.i("OVSKIMAP",o.getClass() +"");
+            Log.i(LOG_TAG,o.getClass() +"");
         }
         tapState = TAP_DEFAULT_MODE;
     }
@@ -678,7 +668,7 @@ public class MainActivity extends BaseActivity
 
     @Override
     public void onOrientationChanged(float orientation, IOrientationProvider source) {
-        Log.i("OVSKI", "orientation changed");
+        Log.i(LOG_TAG, "orientation changed");
         //note, on devices without a compass this never fires...
 
         //only use the compass bit if we aren't moving, since gps is more accurate when we are moving
