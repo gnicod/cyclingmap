@@ -2,7 +2,6 @@ package fr.ovski.ovskimap;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -14,22 +13,22 @@ import android.hardware.GeomagneticField;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -39,7 +38,6 @@ import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer;
-import org.osmdroid.bonuspack.routing.Road;
 import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.MapTileProviderBasic;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
@@ -49,8 +47,6 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Overlay;
-import org.osmdroid.views.overlay.Polyline;
 import org.osmdroid.views.overlay.TilesOverlay;
 import org.osmdroid.views.overlay.compass.CompassOverlay;
 import org.osmdroid.views.overlay.compass.IOrientationConsumer;
@@ -59,13 +55,9 @@ import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -76,37 +68,35 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import fr.ovski.ovskimap.layers.LayerManager;
 import fr.ovski.ovskimap.layers.LayerOverlay;
 import fr.ovski.ovskimap.markers.MarkerManager;
-import fr.ovski.ovskimap.tasks.GraphHopperTask;
-import fr.ovski.ovskimap.tasks.OverpassQueryTask;
 import kotlin.Unit;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, MapEventsReceiver, IOrientationConsumer ,LocationListener{
 
     private static final int RC_SIGN_IN = 6000;
-    private MapView map;
-    private FirebaseUser user;
-    private LinearLayout routingView;
-
-    private RadiusMarkerClusterer poiMarkers;
-
-    private LocationManager mLocationManager;
-    private MarkerManager markerManager = new MarkerManager();
-    private LayerManager layerManager = new LayerManager();
-
-    private static final int TAP_DEFAULT_MODE = 0;
-    private static final int TAP_ROUTING_MODE = 1;
+    public static final int TAP_DEFAULT_MODE = 0;
+    public static final int TAP_ROUTING_MODE = 1;
     private static final String LOG_TAG = "LOG_TAG";
-
-    private int tapState = TAP_DEFAULT_MODE;
-
+    private final LocationListener mLocationListener = this;
     // Routing
     ArrayList<GeoPoint> waypoints;
     ArrayList<Marker> routingMarkers;
-    private AsyncTask<Object, Object, Road> routingTask;
-
-
-    private final LocationListener mLocationListener = this;
+    Float trueNorth = 0f;
+    float gpsspeed;
+    float gpsbearing;
+    float lat = 0;
+    float lon = 0;
+    float alt = 0;
+    long timeOfFix = 0;
+    String screen_orientation = "";
+    private MapView map;
+    private FirebaseUser user;
+    private ScrollView routingView;
+    private RadiusMarkerClusterer poiMarkers;
+    private LocationManager mLocationManager;
+    private MarkerManager markerManager = new MarkerManager();
+    private LayerManager layerManager = new LayerManager();
+    public int tapState = TAP_DEFAULT_MODE;
     private int deviceOrientation = 0;
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -162,14 +152,14 @@ public class MainActivity extends BaseActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission. RECORD_AUDIO)
-                    == PackageManager.PERMISSION_GRANTED) {
-            } else {
+        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission. RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED) {
+        } else {
 
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 1);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 1);
 
-            }
+        }
         super.onCreate(savedInstanceState);
         Log.i(LOG_TAG,getApplicationInfo().dataDir);
         Log.i(LOG_TAG,"here");
@@ -239,20 +229,6 @@ public class MainActivity extends BaseActivity
             }
         });
 
-        findViewById(R.id.btn_save_route).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                createSaveRouteBox();
-            }
-        });
-
-        findViewById(R.id.btn_cancel_route).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                cancelRouting();
-            }
-        });
-
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -298,10 +274,9 @@ public class MainActivity extends BaseActivity
         mapController.setZoom(12);
 
 
-
         GpsMyLocationProvider gpsMyLocationProvider = new GpsMyLocationProvider(MainActivity.this.getBaseContext());
-        gpsMyLocationProvider.setLocationUpdateMinDistance(3); // [m]  // Set the minimum distance for location updates
-        gpsMyLocationProvider.setLocationUpdateMinTime(300);   // [ms] // Set the minimum time interval for location updates
+        gpsMyLocationProvider.setLocationUpdateMinDistance(0); // [m]  // Set the minimum distance for location updates
+        gpsMyLocationProvider.setLocationUpdateMinTime(10);   // [ms] // Set the minimum time interval for location updates
         MyLocationNewOverlay mMyLocationOverlay = new MyLocationNewOverlay(gpsMyLocationProvider, map);
         mMyLocationOverlay.setDrawAccuracyEnabled(true);
         CompassOverlay mCompassOverlay = new CompassOverlay(this, new InternalCompassOrientationProvider(this), map);
@@ -329,8 +304,18 @@ public class MainActivity extends BaseActivity
             loginUI();
         }
 
-        GeoPoint startPoint = new GeoPoint(45.65, 5.94);
-        mapController.setCenter(startPoint);
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            GeoPoint startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+                            mapController.setCenter(startPoint);
+                        }
+                    }
+                });
+
     }
 
     private void initExtraTilesSources() {
@@ -345,40 +330,6 @@ public class MainActivity extends BaseActivity
         BingMapTileSource bing = new BingMapTileSource(null);
         bing.setStyle(BingMapTileSource.IMAGERYSET_ROAD);
         TileSourceFactory.addTileSource(bing);
-    }
-
-    private void createSaveRouteBox() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.title_box_save_route);
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
-        builder.setPositiveButton(R.string.save_route, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Road road;
-                try {
-                    road = routingTask.get();
-                    FileOutputStream fos = null;
-                    fos = getApplicationContext().openFileOutput("testroute", Context.MODE_PRIVATE);
-                    ObjectOutputStream os = new ObjectOutputStream(fos);
-                    os.writeObject(new SerializableRoad(road.mRouteHigh));
-                    os.close();
-                    fos.close();
-                } catch (IOException | InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        builder.show();
-
     }
 
     public void createLayersSelectBox() {
@@ -436,7 +387,6 @@ public class MainActivity extends BaseActivity
         builder.show();
     }
 
-
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -454,7 +404,6 @@ public class MainActivity extends BaseActivity
         return true;
     }
 
-
     @Override
     public boolean singleTapConfirmedHelper(GeoPoint p) {
         switch (tapState) {
@@ -462,62 +411,53 @@ public class MainActivity extends BaseActivity
                 Toast.makeText(this, "Tapped", Toast.LENGTH_SHORT).show();
                 break;
             case TAP_ROUTING_MODE:
-                this.addRoutingMarker(p);
+                //this.addRoutingMarker(p);
                 break;
         }
         return false;
     }
 
-
     @Override
     public boolean longPressHelper(final GeoPoint p) {
-        final CharSequence[] sources = new CharSequence[]{"Insert POI", "Start routing", "Go to", "test"};
+
+        ArrayList<String> sources = new ArrayList<>(Arrays.asList("Insert POI", "Go to"));
+        if (tapState == TAP_ROUTING_MODE) {
+            sources.add("Add waypoint");
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Que faire ?");
-        final Context ctx = getApplicationContext();
-        builder.setItems(sources, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case 0:
-                        //overpassTest();
-                        markerManager.createMarker(
-                                MainActivity.this,
-                                new com.google.firebase.firestore.GeoPoint(p.getLatitude(), p.getLongitude()),
-                                (name, group)-> {
-                                    Marker startMarker = new Marker(map);
-                                    startMarker.setPosition(p);
-                                    startMarker.setTitle(name);
-                                    startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                                    map.getOverlays().add(startMarker);
-                                    map.invalidate();
-                                    return Unit.INSTANCE;
-                                });
-                        break;
-                    case 1:
-                        tapState = TAP_ROUTING_MODE;
-                        waypoints = new ArrayList<GeoPoint>();
-                        routingMarkers = new ArrayList<Marker>();
-                        addRoutingMarker(p);
-                        break;
-                    case 2:
-                        tapState = TAP_ROUTING_MODE;
-                        waypoints = new ArrayList<GeoPoint>();
-                        routingMarkers = new ArrayList<Marker>();
-                        try {
-                            Location lastKnownLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            GeoPoint start = (new GeoPoint(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
-                            addRoutingMarker(start);
-                            addRoutingMarker(p);
-                        } catch (SecurityException e) {
-                            Toast.makeText(getApplicationContext(), "TODO go to ", Toast.LENGTH_SHORT).show();
-                        }
-                        break;
-                    case 3:
-                        overpassTest();
-                        break;
-                }
-
+        RoutingFragment fragment = (RoutingFragment) getFragmentManager().findFragmentById(R.id.routing_fragment);
+        builder.setItems(sources.toArray(new CharSequence[sources.size()]), (dialog, which) -> {
+            switch (which) {
+                case 0:
+                    markerManager.createMarker(
+                            MainActivity.this,
+                            new com.google.firebase.firestore.GeoPoint(p.getLatitude(), p.getLongitude()),
+                            (name, group)-> {
+                                Marker startMarker = new Marker(map);
+                                startMarker.setPosition(p);
+                                startMarker.setTitle(name);
+                                startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                                map.getOverlays().add(startMarker);
+                                map.invalidate();
+                                return Unit.INSTANCE;
+                            });
+                    break;
+                case 1:
+                    tapState = TAP_ROUTING_MODE;
+                    try {
+                        Location lastKnownLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        GeoPoint start = (new GeoPoint(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
+                        fragment.addRoutingMarker(start);
+                        fragment.addRoutingMarker(p);
+                    } catch (SecurityException e) {
+                        Toast.makeText(getApplicationContext(), "TODO go to ", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case 2:
+                    tapState = TAP_ROUTING_MODE;
+                    fragment.addRoutingMarker(p);
+                    break;
             }
         });
         builder.show();
@@ -538,82 +478,6 @@ public class MainActivity extends BaseActivity
                         .setAvailableProviders(providers)
                         .build(), RC_SIGN_IN);
     }
-
-    private void addRoutingMarker(GeoPoint point) {
-        Toast.makeText(this, "add new point ", Toast.LENGTH_SHORT).show();
-        waypoints.add(point);
-        String apiKey = this.getString(R.string.graphopper_key);
-        if (waypoints.size()>1) {
-            routingTask = new GraphHopperTask(map, routingView, apiKey, waypoints).execute();
-        }
-        Marker startMarker = new Marker(map);
-        startMarker.setPosition(point);
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        routingMarkers.add(startMarker);
-        map.getOverlays().add(startMarker);
-        map.invalidate();
-    }
-
-    private void overpassTest() {
-        Log.i("OVERPASS", map.getBoundingBox().toString());
-        new OverpassQueryTask(map, map.getBoundingBox()).execute();
-        /*
-        OverpassAPIProvider overpassProvider = new OverpassAPIProvider();
-        overpassProvider.setService("https://overpass-api.de/api/interpreter");
-        String url = overpassProvider.urlForTagSearchKml("amenity=drinking_water", map.getBoundingBox(), 500, 30);
-        KmlDocument kmlDocument = new KmlDocument();
-
-
-        boolean ok = overpassProvider.addInKmlFolder(kmlDocument.mKmlRoot, url);
-        FolderOverlay kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, null, kmlDocument);
-        map.getOverlays().add(kmlOverlay);
-        */
-
-        /*
-        String query = new OverpassQuery().
-                format(OutputFormat.JSON)
-                .timeout(30)
-                .filterQuery()
-                .node()
-                .amenity("drinking_water")
-                .boundingBox(
-                        47.48047027491862, 19.039797484874725,
-                        47.51331674014172, 19.07404761761427
-                )
-                .end()
-                .output(OutputVerbosity.BODY, OutputModificator.CENTER, OutputOrder.QT, 100)
-                .build();
-        Log.i("OPENRUNNER", query);
-        */
-    }
-
-    public void cancelRouting(){
-        routingView.setVisibility(View.GONE);
-        map.getOverlays().removeAll(routingMarkers);
-        map.invalidate();
-        for(Overlay o :  map.getOverlays()) {
-            if(o instanceof Polyline){
-                if(((Polyline) o).getTitle() == GraphHopperTask.OVERLAY_TITLE) {
-                    Log.i(LOG_TAG,"remove");
-                    ((Polyline) o).setVisible(false);
-                    o.setEnabled(false);
-                    map.invalidate();
-                }
-            }
-            Log.i(LOG_TAG,o.getClass() +"");
-        }
-        tapState = TAP_DEFAULT_MODE;
-    }
-
-
-    Float trueNorth = 0f;
-    float gpsspeed;
-    float gpsbearing;
-    float lat = 0;
-    float lon = 0;
-    float alt = 0;
-    long timeOfFix = 0;
-    String screen_orientation = "";
 
     @Override
     public void onLocationChanged(Location location) {
@@ -700,6 +564,4 @@ public class MainActivity extends BaseActivity
             }
         }
     }
-
-
 }

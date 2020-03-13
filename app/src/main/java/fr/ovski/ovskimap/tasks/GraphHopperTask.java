@@ -3,7 +3,6 @@ package fr.ovski.ovskimap.tasks;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.osmdroid.bonuspack.routing.GraphHopperRoadManager;
@@ -24,7 +23,7 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
     private ArrayList<GeoPoint> waypoints;
     private GraphHopperRoadManager roadManager;
     private MapView map;
-    private LinearLayout routingView;
+    private View routingView;
     private TextView textDistance;
     private TextView textElevation;
     private Polyline roadOverlay;
@@ -35,11 +34,11 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
         return road;
     }
 
-    public GraphHopperTask(MapView map, LinearLayout routingView, String apiKey, ArrayList<GeoPoint> waypoints) {
+    public GraphHopperTask(MapView map, View routingView, String apiKey, ArrayList<GeoPoint> waypoints) {
         this.map = map;
         this.routingView = routingView;
-        textDistance = (TextView) routingView.findViewById(R.id.routing_distance);
-        textElevation = (TextView) routingView.findViewById(R.id.routing_elevation);
+        textDistance = routingView.findViewById(R.id.routing_distance);
+        textElevation = routingView.findViewById(R.id.routing_elevation);
         roadManager = new GraphHopperRoadManager(apiKey,false);
         roadManager.setElevation(true);
         roadManager.addRequestOption("vehicle=hike");
@@ -64,20 +63,11 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
             Log.i("MAP","total " + elevationTotal+"m");
         }
         routingView.setVisibility(View.VISIBLE);
-        textElevation.setText(new DecimalFormat("##.#").format(elevationTotal) + " m");
-        textDistance.setText(new DecimalFormat("##.##").format(road.mLength) + " km");
+        textElevation.setText(String.format("%s m", new DecimalFormat("##.#").format(elevationTotal)));
+        textDistance.setText(String.format("%s km", new DecimalFormat("##.##").format(road.mLength)));
         routingView.invalidate();
-
-        /*
-        FileOutputStream fos = ctx.openFileOutput(fileName, Context.MODE_PRIVATE);
-        ObjectOutputStream os = new ObjectOutputStream(fos);
-        os.writeObject(this);
-        os.close();
-        fos.close();
-        */
-
         roadOverlay = RoadManager.buildRoadOverlay(road);
-        roadOverlay.setTitle(this.OVERLAY_TITLE);
+        roadOverlay.setTitle(OVERLAY_TITLE);
         map.getOverlays().add(roadOverlay);
         map.invalidate();
     }
