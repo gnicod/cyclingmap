@@ -1,63 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/frame_routing"
+    android:visibility="gone"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".RoutingFragment">
 
-    <ScrollView
-        android:id="@+id/routing_view"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible">
-        <LinearLayout
+        android:orientation="vertical">
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-            <FrameLayout
+            android:layout_height="250dp">
+            <ScrollView
+                android:id="@+id/routing_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:visibility="visible">
                 <com.woxthebox.draglistview.DragListView
                     android:id="@+id/drag_list_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
-            </FrameLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:visibility="visible">
-                <!-- Need to wrap DragListView in another layout for
-                    wrap_content to work for some reason -->
+            </ScrollView>
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:visibility="visible">
+            <!-- Need to wrap DragListView in another layout for
+                wrap_content to work for some reason -->
 
-                <TextView
-                    android:id="@+id/routing_distance"
-                    android:layout_width="wrap_content"
-                    android:layout_height="123dp"
-                    android:layout_weight="1"
-                    android:text="" />
+            <TextView
+                android:id="@+id/routing_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="123dp"
+                android:layout_weight="1"
+                android:text="" />
 
-                <TextView
-                    android:id="@+id/routing_elevation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="123dp"
-                    android:layout_weight="1"
-                    android:text="" />
+            <TextView
+                android:id="@+id/routing_elevation"
+                android:layout_width="wrap_content"
+                android:layout_height="123dp"
+                android:layout_weight="1"
+                android:text="" />
 
-                <Button
-                    android:id="@+id/btn_save_route"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/save_route" />
+            <Button
+                android:id="@+id/btn_save_route"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/save_route" />
 
-                <Button
-                    android:id="@+id/btn_cancel_route"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/cancel_route" />
-            </LinearLayout>
+            <Button
+                android:id="@+id/btn_cancel_route"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cancel_route" />
         </LinearLayout>
-
-    </ScrollView>
+    </LinearLayout>
 
 </FrameLayout>

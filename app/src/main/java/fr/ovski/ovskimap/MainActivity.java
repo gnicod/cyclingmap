@@ -423,6 +423,8 @@ public class MainActivity extends BaseActivity
         ArrayList<String> sources = new ArrayList<>(Arrays.asList("Insert POI", "Go to"));
         if (tapState == TAP_ROUTING_MODE) {
             sources.add("Add waypoint");
+        } else {
+            sources.add("Start from");
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Que faire ?");

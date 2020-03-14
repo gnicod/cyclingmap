@@ -47,12 +47,11 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
 
     @Override
     protected void onPostExecute(Road road) {
-        //road.mDuration
         super.onPostExecute(road);
         double prevElevation = 0;
         double elevationTotal = 0;
         boolean isFirst = true;
-        for (GeoPoint p : road.mRouteHigh) {
+        for (GeoPoint p : road.getRouteLow()) {
             double elevation = p.getAltitude();
             if(!isFirst && elevation>prevElevation){
                 elevationTotal += elevation-prevElevation;
@@ -66,7 +65,7 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
         textElevation.setText(String.format("%s m", new DecimalFormat("##.#").format(elevationTotal)));
         textDistance.setText(String.format("%s km", new DecimalFormat("##.##").format(road.mLength)));
         routingView.invalidate();
-        roadOverlay = RoadManager.buildRoadOverlay(road);
+        roadOverlay = RoadManager.buildRoadOverlay(road, 0x800000FF, 15.0f);
         roadOverlay.setTitle(OVERLAY_TITLE);
         map.getOverlays().add(roadOverlay);
         map.invalidate();
