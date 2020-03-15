@@ -35,7 +35,7 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" />
-        <activity android:name=".OpenRunnerListActivity" />
+        <activity android:name=".RoutesListActivity" />
         <activity
             android:name=".MapActivity"
             android:label="@string/title_activity_map"

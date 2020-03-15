@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.woxthebox.draglistview.DragListView
+import fr.ovski.ovskimap.adapter.ItemRoutingAdapter
 import fr.ovski.ovskimap.markers.NumMarker
 import fr.ovski.ovskimap.tasks.GraphHopperTask
 import org.osmdroid.bonuspack.kml.KmlDocument
@@ -133,7 +134,6 @@ class RoutingFragment : Fragment() {
     }
 
     private fun launchRouting() {
-        //TODO refactor
         val apiKey = getString(R.string.graphopper_key)
         for (o in map.overlays) {
             if (o is Polyline) {
