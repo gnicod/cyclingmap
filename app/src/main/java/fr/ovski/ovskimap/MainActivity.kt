@@ -37,7 +37,9 @@ import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton
 import fr.ovski.ovskimap.layers.LayerManager
 import fr.ovski.ovskimap.markers.MarkerManager
+import fr.ovski.ovskimap.models.Route
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
+import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.MapTileProviderBasic
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -126,6 +128,17 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
             this.requestedOrientation = orientation
         }
+    }
+
+    fun displayRouteFromIntent() {
+        val bundle = intent.extras ?: return
+        val route = bundle.getSerializable("route") as Route
+        val kmlDocument = KmlDocument()
+        kmlDocument.parseGeoJSON(route.geojson)
+        val overlay = kmlDocument.mKmlRoot.buildOverlay(map,null,null,kmlDocument);
+        map!!.overlays.add(overlay);
+        map!!.invalidate()
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -236,6 +249,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         map!!.isTilesScaledToDpi = true
         val mapController = map!!.controller
         mapController.setZoom(12)
+        displayRouteFromIntent()
 
 
         val gpsMyLocationProvider = GpsMyLocationProvider(this@MainActivity.baseContext)

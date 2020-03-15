@@ -1,6 +1,8 @@
 package fr.ovski.ovskimap.models
 
-class Route(public var name: String) {
+import java.io.Serializable
+
+class Route(public var name: String) : Serializable{
 
     public var geojson: String = ""
 

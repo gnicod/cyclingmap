@@ -1,5 +1,6 @@
 package fr.ovski.ovskimap;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,7 +29,23 @@ public class RoutesListActivity extends AppCompatActivity {
         RouteViewHolder(View itemView) {
             super(itemView);
             view = itemView;
-            view.setOnClickListener(view -> Toast.makeText(view.getContext(), "on click", Toast.LENGTH_LONG).show());
+            view.setOnClickListener(v -> {
+                Toast.makeText(v.getContext(), "on click", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(RoutesListActivity.this, MainActivity.class);
+                int position = getAdapterPosition();
+                Route route = adapter.getItem(position);
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("route", route);
+                intent.putExtras(bundle);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            });
+            view.setOnLongClickListener(v -> {
+                Toast.makeText(v.getContext(), "on long click", Toast.LENGTH_LONG).show();
+
+                return true;
+            });
+
 
         }
 
