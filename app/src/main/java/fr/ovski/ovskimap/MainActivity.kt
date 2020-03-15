@@ -134,8 +134,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val bundle = intent.extras ?: return
         val route = bundle.getSerializable("route") as Route
         val kmlDocument = KmlDocument()
-        kmlDocument.parseGeoJSON(route.geojson)
-        val overlay = kmlDocument.mKmlRoot.buildOverlay(map,null,null,kmlDocument);
+        kmlDocument.parseKMLFile(KMLWriter.convertStringToFile(route.kml))
+        //map!!.setMap = kmlDocument.mKmlRoot.boundingBox.center
+        val overlay = kmlDocument.mKmlRoot.buildOverlay(map,null,null,kmlDocument)
         map!!.overlays.add(overlay);
         map!!.invalidate()
 

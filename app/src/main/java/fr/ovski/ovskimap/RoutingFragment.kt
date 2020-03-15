@@ -19,14 +19,12 @@ import com.woxthebox.draglistview.DragListView
 import fr.ovski.ovskimap.adapter.ItemRoutingAdapter
 import fr.ovski.ovskimap.markers.NumMarker
 import fr.ovski.ovskimap.tasks.GraphHopperTask
-import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.bonuspack.routing.Road
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import java.io.IOException
-import java.io.StringWriter
 import java.util.*
 import java.util.concurrent.ExecutionException
 import kotlin.collections.ArrayList
@@ -86,22 +84,12 @@ class RoutingFragment : Fragment() {
 
     }
 
-    private fun saveRoute(title: String) {
-        val kmlDocument = KmlDocument()
-        val writer = StringWriter()
+    private fun saveRoute(name: String) {
         val routing = routingTask.get()
-        for (o in map.overlays) {
-            if (o is Polyline) {
-                if (o.title === GraphHopperTask.OVERLAY_TITLE) {
-                    kmlDocument.mKmlRoot.addOverlay(o, kmlDocument)
-                }
-            }
-        }
-        kmlDocument.saveAsGeoJSON(writer)
-        val geojson = writer.toString()
+        val kml = KMLWriter.getKMLFromRoad(routing)
         val roadGeoJson = hashMapOf(
-                "title" to title,
-                "geojson" to geojson
+                "name" to name,
+                "kml" to kml
         )
         user?.uid?.let {
             this.db.collection("users").document(it).collection("routes")
