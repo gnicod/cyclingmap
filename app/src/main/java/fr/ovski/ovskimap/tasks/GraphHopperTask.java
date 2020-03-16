@@ -15,6 +15,7 @@ import org.osmdroid.views.overlay.Polyline;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import fr.ovski.ovskimap.AsyncResponse;
 import fr.ovski.ovskimap.R;
 
 public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
@@ -27,11 +28,11 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
     private TextView textDistance;
     private TextView textElevation;
     private Polyline roadOverlay;
+    public AsyncResponse delegate = null;
 
     @Override
     protected Road doInBackground(Object... params) {
-        Road road = roadManager.getRoad(waypoints);
-        return road;
+        return roadManager.getRoad(waypoints);
     }
 
     public GraphHopperTask(MapView map, View routingView, String apiKey, ArrayList<GeoPoint> waypoints) {
@@ -69,5 +70,6 @@ public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
         roadOverlay.setTitle(OVERLAY_TITLE);
         map.getOverlays().add(roadOverlay);
         map.invalidate();
+        delegate.processFinish(road);
     }
 }

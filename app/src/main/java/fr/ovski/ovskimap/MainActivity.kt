@@ -130,6 +130,10 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
     }
 
+    /**
+     * Read data passed to intent and extract the route passed in parameter
+     * If a route is found, display the route and elevation profile
+     */
     fun displayRouteFromIntent() {
         val bundle = intent.extras ?: return
         val route = bundle.getSerializable("route") as Route
@@ -141,11 +145,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val fragmentTransaction = fragmentManager.beginTransaction()
         fragmentTransaction.add(R.id.elevation_fragment, elevationFragment)
         fragmentTransaction.commit()
-
-
-        //map!!.setMap = kmlDocument.mKmlRoot.boundingBox.center
+        map!!.controller.animateTo(kmlDocument.mKmlRoot.boundingBox.center)
         val overlay = kmlDocument.mKmlRoot.buildOverlay(map,null,null,kmlDocument)
-        map!!.overlays.add(overlay);
+        map!!.overlays.add(overlay)
         map!!.invalidate()
 
     }
@@ -408,7 +410,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
         val builder = AlertDialog.Builder(this@MainActivity)
         builder.setTitle("Que faire ?")
-        val fragment = fragmentManager.findFragmentById(R.id.routing_fragment) as RoutingFragment
+        val fragment = supportFragmentManager.findFragmentById(R.id.routing_fragment) as RoutingFragment
         builder.setItems(sources.toTypedArray<CharSequence>()) { dialog, which ->
             when (which) {
                 0 -> markerManager.createMarker(

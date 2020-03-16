@@ -1,6 +1,5 @@
 package fr.ovski.ovskimap
 
-import android.app.Fragment
 import android.os.AsyncTask
 import android.os.Bundle
 import android.text.InputType
@@ -11,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.util.Pair
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -19,6 +19,7 @@ import com.woxthebox.draglistview.DragListView
 import fr.ovski.ovskimap.adapter.ItemRoutingAdapter
 import fr.ovski.ovskimap.markers.NumMarker
 import fr.ovski.ovskimap.tasks.GraphHopperTask
+import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.bonuspack.routing.Road
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -30,8 +31,10 @@ import java.util.concurrent.ExecutionException
 import kotlin.collections.ArrayList
 
 
-class RoutingFragment : Fragment() {
+class RoutingFragment : Fragment(), AsyncResponse{
 
+    private var distance: Double = 0.0
+    private var totalAlt: Double = 0.0
     private lateinit var listAdapter: ItemRoutingAdapter
     private var mItemArray: ArrayList<Pair<Long, String>> = arrayListOf<Pair<Long, String>>()
     private lateinit var map: MapView
@@ -41,6 +44,7 @@ class RoutingFragment : Fragment() {
     private var LOG_TAG = "ROUTING_TAG"
     private val db = FirebaseFirestore.getInstance()
     private var user: FirebaseUser? = null
+    private lateinit var kmlDocument: KmlDocument
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -84,6 +88,9 @@ class RoutingFragment : Fragment() {
 
     }
 
+    /**
+     * Save the route in firebase
+     */
     private fun saveRoute(name: String) {
         val routing = routingTask.get()
         val kml = KMLUtils.getKMLFromRoad(routing)
@@ -99,6 +106,9 @@ class RoutingFragment : Fragment() {
         }
     }
 
+    /**
+     * Create and display a dialogbox asking the user a name for the route
+     */
     private fun createSaveRouteBox() {
         val builder = AlertDialog.Builder(this.context!!)
         builder.setTitle(R.string.title_box_save_route)
@@ -134,7 +144,9 @@ class RoutingFragment : Fragment() {
         }
         if (waypoints.size >1) {
             val waypointsGeo = ArrayList(waypoints.map { marker -> marker.position}.toList())
-            routingTask = GraphHopperTask(map, view, apiKey, waypointsGeo).execute()
+            val graphHopperTask = GraphHopperTask(map, view, apiKey, waypointsGeo)
+            graphHopperTask.delegate = this
+            routingTask = graphHopperTask.execute()
         }
     }
 
@@ -145,7 +157,7 @@ class RoutingFragment : Fragment() {
         map.invalidate()
         val act = activity as MainActivity
         act.tapState = MainActivity.TAP_DEFAULT_MODE
-        view.visibility = View.GONE
+        view!!.visibility = View.GONE
     }
 
     fun addRoutingMarker(point: GeoPoint) {
@@ -158,9 +170,35 @@ class RoutingFragment : Fragment() {
         listAdapter.notifyDataSetChanged()
         map.overlays.add(startMarker)
         map.invalidate()
-        view.visibility = View.VISIBLE
+        view!!.visibility = View.VISIBLE
         launchRouting()
     }
 
+    /**
+     * Called when graphopper returned us a response, with the road as parameter
+     */
+    override fun processFinish(road: Road) {
+        val kml = KMLUtils.getKMLFromRoad(road)
+        kmlDocument = KmlDocument()
+        kmlDocument.parseKMLFile(KMLUtils.convertStringToFile(kml))
+        val entries = KMLUtils.getEntriesFromKmlDocument(kmlDocument)
+        var prevAlt: Double? = null
+        entries.forEach {
+            val geopoint = it.data as GeoPoint
+            if (prevAlt == null) {
+                prevAlt = geopoint.altitude
+            }
+            if (geopoint.altitude > prevAlt!!) {
+                totalAlt = prevAlt!! - geopoint.altitude
+            }
+        }
+        distance = road.mLength
+
+        val elevationFragment = ElevationProfileFragment.newInstance(entries, "test")
+        val fragmentManager = this.fragmentManager
+        val fragmentTransaction = fragmentManager!!.beginTransaction()
+        fragmentTransaction.add(R.id.elevation_fragment, elevationFragment)
+        fragmentTransaction.commit()
+    }
 
 }

@@ -14,7 +14,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
-import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -25,28 +24,18 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.util.BoundingBox;
-import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.FolderOverlay;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import fr.ovski.ovskimap.OpenRunnerHelper;
-import fr.ovski.ovskimap.OpenRunnerRouteDbHelper;
-import fr.ovski.ovskimap.R;
-import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.internal.JavaNetCookieJar;
 
 
 class ORRoutesTask extends AsyncTask<Void, Integer, HashMap<Integer,String>> {
@@ -93,10 +82,6 @@ class ORRoutesTask extends AsyncTask<Void, Integer, HashMap<Integer,String>> {
         orHelper.login();
         this.client = orHelper.getClient();
         return this.getRoutes();
-    }
-
-    public interface AsyncResponse {
-        void processFinish(String output);
     }
 
     public ORRoutesTask(Context ctx) {

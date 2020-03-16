@@ -75,6 +75,7 @@ class ElevationProfileFragment : Fragment(), OnChartValueSelectedListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val elevationChart = view!!.findViewById(R.id.elevation_profile) as LineChart
+        view.visibility = View.VISIBLE
         elevationChart.setOnChartValueSelectedListener(this)
         elevationChart.setDrawBorders(false)
         val dataSet = LineDataSet(entries, "Elevation")
