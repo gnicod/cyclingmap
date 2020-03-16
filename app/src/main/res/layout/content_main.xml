@@ -18,6 +18,12 @@
             android:name="fr.ovski.ovskimap.RoutingFragment"
             android:layout_width="match_parent"
             android:layout_height="300dp" />
+        <fragment
+            android:id="@+id/elevation_fragment"
+            android:name="fr.ovski.ovskimap.ElevationProfileFragment"
+            android:layout_gravity="bottom"
+            android:layout_width="match_parent"
+            android:layout_height="300dp" />
 
         <org.osmdroid.views.MapView android:id="@+id/map"
             android:layout_width="fill_parent"

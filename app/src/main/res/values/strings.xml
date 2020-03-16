@@ -91,4 +91,7 @@
     <string name="save_route">Save</string>
     <string name="title_box_save_route">Save route</string>
     <string name="cancel_route">cancel</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

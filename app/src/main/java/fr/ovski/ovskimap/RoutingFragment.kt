@@ -86,7 +86,7 @@ class RoutingFragment : Fragment() {
 
     private fun saveRoute(name: String) {
         val routing = routingTask.get()
-        val kml = KMLWriter.getKMLFromRoad(routing)
+        val kml = KMLUtils.getKMLFromRoad(routing)
         val roadGeoJson = hashMapOf(
                 "name" to name,
                 "kml" to kml

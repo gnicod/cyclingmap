@@ -134,7 +134,15 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val bundle = intent.extras ?: return
         val route = bundle.getSerializable("route") as Route
         val kmlDocument = KmlDocument()
-        kmlDocument.parseKMLFile(KMLWriter.convertStringToFile(route.kml))
+        kmlDocument.parseKMLFile(KMLUtils.convertStringToFile(route.kml))
+        val entries = KMLUtils.getEntriesFromKmlDocument(kmlDocument)
+        val elevationFragment = ElevationProfileFragment.newInstance(entries, "test")
+        val fragmentManager = supportFragmentManager
+        val fragmentTransaction = fragmentManager.beginTransaction()
+        fragmentTransaction.add(R.id.elevation_fragment, elevationFragment)
+        fragmentTransaction.commit()
+
+
         //map!!.setMap = kmlDocument.mKmlRoot.boundingBox.center
         val overlay = kmlDocument.mKmlRoot.buildOverlay(map,null,null,kmlDocument)
         map!!.overlays.add(overlay);
