@@ -1,7 +1,9 @@
 package fr.ovski.ovskimap
 
+import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.view.Menu
@@ -11,6 +13,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
@@ -139,6 +142,13 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    fun askLocationPermissions() {
+        if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 1)
+        }
     }
 
 }

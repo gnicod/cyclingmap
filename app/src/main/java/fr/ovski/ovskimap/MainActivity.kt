@@ -154,12 +154,22 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
     }
 
+    fun centerMapOnUser() {
+        try {
+            val lastKnownLocation = mLocationManager!!.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            map!!.controller.setCenter(GeoPoint(lastKnownLocation.latitude, lastKnownLocation.longitude))
+            map!!.invalidate()
+            mLocationManager!!.requestSingleUpdate(LocationManager.GPS_PROVIDER, mLocationListener, null)
+        } catch (e: SecurityException) {
+            askLocationPermissions()
+            centerMapOnUser()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
         } else {
-
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO), 1)
-
         }
         super.onCreate(savedInstanceState)
         Log.i(LOG_TAG, applicationInfo.dataDir)
@@ -210,14 +220,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
         buttonShowCol.setOnClickListener { createLayersSelectBox() }
         buttonLocation.setOnClickListener {
-            try {
-                val lastKnownLocation = mLocationManager!!.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                map!!.controller.setCenter(GeoPoint(lastKnownLocation.latitude, lastKnownLocation.longitude))
-                map!!.invalidate()
-                mLocationManager!!.requestSingleUpdate(LocationManager.GPS_PROVIDER, mLocationListener, null)
-            } catch (e: SecurityException) {
-
-            }
+            centerMapOnUser()
         }
 
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)

@@ -50,8 +50,18 @@ public class RoutesListActivity extends AppCompatActivity {
         }
 
         void setName(String name) {
-            TextView textView = view.findViewById(R.id.route_name);
+            TextView textView = view.findViewById(R.id.route_name_value);
             textView.setText(name);
+        }
+
+        void setAscent(Double value) {
+            TextView textView = view.findViewById(R.id.route_ascent_value);
+            textView.setText(value.toString());
+        }
+
+        void setDistance(Double value) {
+            TextView textView = view.findViewById(R.id.route_distance_value);
+            textView.setText(value.toString());
         }
     }
     private FirestoreRecyclerAdapter<Route, RouteViewHolder> adapter;
@@ -75,6 +85,8 @@ public class RoutesListActivity extends AppCompatActivity {
             @Override
             protected void onBindViewHolder(@NonNull RouteViewHolder holder, int position, @NonNull Route route) {
                 holder.setName(route.getName());
+                holder.setDistance(route.getDistance());
+                holder.setAscent(route.getAscent());
             }
 
             @NonNull

@@ -2,10 +2,10 @@ package fr.ovski.ovskimap.models
 
 import java.io.Serializable
 
-class Route(public var name: String) : Serializable{
+class Route(var name: String, var distance: Double, var ascent: Double) : Serializable{
 
-    public var kml: String = ""
+    var kml: String = ""
 
-    constructor(): this("")
+    constructor(): this("", 0.0, 0.0)
 
 }
