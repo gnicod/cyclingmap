@@ -46,12 +46,12 @@ dependencies {
     implementation 'org.jsoup:jsoup:1.10.2'
     implementation 'com.koushikdutta.ion:ion:2.2.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.vectordrawable:vectordrawable:1.0.0'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0'
     implementation 'hu.supercluster:overpasser:0.2.2'
     implementation 'com.oguzdev:CircularFloatingActionMenu:1.0.2'
-    implementation 'com.google.firebase:firebase-auth:19.1.0'
-    implementation 'com.google.firebase:firebase-firestore:21.1.1'
+    implementation 'com.google.firebase:firebase-firestore:21.4.1'
     implementation 'com.firebaseui:firebase-ui-firestore:6.2.0'
+    implementation 'com.firebaseui:firebase-ui-auth:6.0.0'
     testImplementation 'junit:junit:4.12'
     implementation "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"

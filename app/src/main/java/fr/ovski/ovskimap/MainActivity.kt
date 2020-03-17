@@ -1,6 +1,7 @@
 package fr.ovski.ovskimap
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -30,6 +31,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton
@@ -75,7 +77,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private var routingView: ScrollView? = null
     private var poiMarkers: RadiusMarkerClusterer? = null
     private var mLocationManager: LocationManager? = null
-    private val markerManager = MarkerManager()
+    private lateinit var markerManager: MarkerManager
     private val layerManager = LayerManager()
     var tapState = TAP_DEFAULT_MODE
     private var deviceOrientation = 0
@@ -83,7 +85,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == RC_SIGN_IN) {
+        if (requestCode == RC_SIGN_IN && ::markerManager.isInitialized) {
             val response = IdpResponse.fromResultIntent(data)
             if (resultCode == Activity.RESULT_OK) {
                 // Successfully signed in
@@ -167,6 +169,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        FirebaseApp.initializeApp(this.applicationContext)
         val auth = FirebaseAuth.getInstance()
 
         poiMarkers = RadiusMarkerClusterer(this)
@@ -282,6 +285,8 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val clusterIcon = (clusterIconD as BitmapDrawable).bitmap
         poiMarkers!!.setIcon(clusterIcon)
 
+        // TODO refactor
+        markerManager = MarkerManager(this)
         if (auth.currentUser != null) {
             this.user = auth.currentUser
             markerManager.setUser(this.user!!)
@@ -447,19 +452,26 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         return false
     }
 
+    @SuppressLint("RestrictedApi")
     private fun loginUI() {
         // Choose authentication providers
-        val providers = Arrays.asList(
-                AuthUI.IdpConfig.EmailBuilder().build(),
-                AuthUI.IdpConfig.PhoneBuilder().build(),
-                AuthUI.IdpConfig.GoogleBuilder().build())
-
-        // Create and launch sign-in intent
+        val context = this.applicationContext
+        AuthUI.setApplicationContext(context)
+        FirebaseApp.initializeApp(context)
         startActivityForResult(
-                AuthUI.getInstance()
-                        .createSignInIntentBuilder()
-                        .setAvailableProviders(providers)
-                        .build(), RC_SIGN_IN)
+                AuthUI.getInstance().createSignInIntentBuilder()
+                        .setIsSmartLockEnabled(false)
+                        .setTheme(R.style.AppTheme)
+                        .setAvailableProviders(
+                                arrayListOf(
+                                        AuthUI.IdpConfig.EmailBuilder().build(),
+                                        AuthUI.IdpConfig.PhoneBuilder().build(),
+                                        AuthUI.IdpConfig.GoogleBuilder().build()
+                                )
+                        )
+                        .build(),
+                RC_SIGN_IN
+        )
     }
 
     override fun onLocationChanged(location: Location) {

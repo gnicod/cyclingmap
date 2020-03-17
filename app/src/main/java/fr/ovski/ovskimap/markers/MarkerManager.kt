@@ -7,6 +7,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.Spinner
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
@@ -15,11 +16,16 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 
-class MarkerManager {
+class MarkerManager(context: Context) {
     private val TAG: String? = "MARKERMANAGER"
-    private val db = FirebaseFirestore.getInstance()
+    private var db: FirebaseFirestore
     private var user: FirebaseUser? = null
     private var groups: ArrayList<String> = arrayListOf();
+
+    init {
+        FirebaseApp.initializeApp(context)
+         db = FirebaseFirestore.getInstance()
+    }
 
     fun setUser(user: FirebaseUser) {
         this.user = user

@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.util.Pair
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -31,7 +32,7 @@ import java.util.concurrent.ExecutionException
 import kotlin.collections.ArrayList
 
 
-class RoutingFragment : Fragment(), AsyncResponse{
+class RoutingFragment : Fragment(), AsyncResponse {
 
     private var distance: Double = 0.0
     private var totalAlt: Double = 0.0
@@ -42,7 +43,7 @@ class RoutingFragment : Fragment(), AsyncResponse{
     private var waypoints: ArrayList<NumMarker> = arrayListOf<NumMarker>()
     private var routingMarkers: ArrayList<Marker> = arrayListOf<Marker>()
     private var LOG_TAG = "ROUTING_TAG"
-    private val db = FirebaseFirestore.getInstance()
+    private lateinit var db: FirebaseFirestore
     private var user: FirebaseUser? = null
     private lateinit var kmlDocument: KmlDocument
 
@@ -54,7 +55,9 @@ class RoutingFragment : Fragment(), AsyncResponse{
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         map = activity!!.findViewById<MapView>(R.id.map)
-        this.user = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseApp.initializeApp(activity!!.applicationContext)
+        this.user = FirebaseAuth.getInstance().currentUser
+        this.db = FirebaseFirestore.getInstance()
         // TODO: Use the ViewModel
     }
 
@@ -66,7 +69,7 @@ class RoutingFragment : Fragment(), AsyncResponse{
         val mDragListView = getView()?.findViewById<DragListView>(R.id.drag_list_view)
 
         mDragListView!!.setLayoutManager(LinearLayoutManager(context))
-        mDragListView.setDragListListener(object: DragListView.DragListListener {
+        mDragListView.setDragListListener(object : DragListView.DragListListener {
             override fun onItemDragging(itemPosition: Int, x: Float, y: Float) {
 
             }
@@ -76,7 +79,7 @@ class RoutingFragment : Fragment(), AsyncResponse{
 
             override fun onItemDragEnded(fromPosition: Int, toPosition: Int) {
                 Collections.swap(waypoints, fromPosition, toPosition)
-                waypoints.forEachIndexed {index, marker -> marker.setNumber(index)}
+                waypoints.forEachIndexed { index, marker -> marker.setNumber(index) }
                 // TODO rerender marker layout
                 launchRouting()
             }
@@ -142,8 +145,8 @@ class RoutingFragment : Fragment(), AsyncResponse{
                 }
             }
         }
-        if (waypoints.size >1) {
-            val waypointsGeo = ArrayList(waypoints.map { marker -> marker.position}.toList())
+        if (waypoints.size > 1) {
+            val waypointsGeo = ArrayList(waypoints.map { marker -> marker.position }.toList())
             val graphHopperTask = GraphHopperTask(map, view, apiKey, waypointsGeo)
             graphHopperTask.delegate = this
             routingTask = graphHopperTask.execute()
