@@ -30,7 +30,6 @@ public class RoutesListActivity extends AppCompatActivity {
             super(itemView);
             view = itemView;
             view.setOnClickListener(v -> {
-                Toast.makeText(v.getContext(), "on click", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(RoutesListActivity.this, MainActivity.class);
                 int position = getAdapterPosition();
                 Route route = adapter.getItem(position);
@@ -41,8 +40,7 @@ public class RoutesListActivity extends AppCompatActivity {
                 startActivity(intent);
             });
             view.setOnLongClickListener(v -> {
-                Toast.makeText(v.getContext(), "on long click", Toast.LENGTH_LONG).show();
-
+                Toast.makeText(v.getContext(), "CRUD", Toast.LENGTH_LONG).show();
                 return true;
             });
 

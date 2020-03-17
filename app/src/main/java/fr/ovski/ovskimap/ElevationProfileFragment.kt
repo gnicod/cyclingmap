@@ -59,9 +59,13 @@ class ElevationProfileFragment : Fragment(), OnChartValueSelectedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            entries = it.getSerializable(ARG_ENTRIES) as ArrayList<Entry>?
-            param2 = it.getString(ARG_PARAM2)
+        Log.i("OVSKI ERROR", savedInstanceState.toString())
+        if (savedInstanceState == null) {
+            arguments?.let {
+                entries = it.getSerializable(ARG_ENTRIES) as ArrayList<Entry>?
+                param2 = it.getString(ARG_PARAM2)
+            }
+
         }
     }
 
@@ -75,7 +79,9 @@ class ElevationProfileFragment : Fragment(), OnChartValueSelectedListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val elevationChart = view!!.findViewById(R.id.elevation_profile) as LineChart
-        view.visibility = View.VISIBLE
+        if (entries != null) {
+            view.visibility = View.VISIBLE
+        }
         elevationChart.setOnChartValueSelectedListener(this)
         elevationChart.setDrawBorders(false)
         val dataSet = LineDataSet(entries, "Elevation")

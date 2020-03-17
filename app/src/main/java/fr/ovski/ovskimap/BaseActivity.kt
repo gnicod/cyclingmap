@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton
@@ -90,40 +91,24 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.base, menu)
+        menuInflater.inflate(R.menu.main, menu)
         return true
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         // Handle navigation view item clicks here.
         val id = item.itemId
+        val rootView: View = window.decorView.rootView.findViewById(R.id.main_app_view)
 
-        if (id == R.id.nav_openrunner) {
-            /*
-            openrunner
-            */
-            ORRoutesTask(this).execute()
-        } else if (id == R.id.nav_gallery) {
+        if (id == R.id.nav_gallery) {
             val intent = Intent(this, RoutesListActivity::class.java)
             startActivity(intent)
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
         } else if (id == R.id.nav_share) {
-
+            Snackbar.make(rootView, "Will be implemented soon, or not...", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
         } else if (id == R.id.nav_send) {
-            val map = findViewById<View>(R.id.map) as MapView
-            val bb = map.boundingBox
-            val geoTop = GeoPoint(
-                    bb.latNorth,
-                    bb.lonWest
-            )
-            val geoBottom = GeoPoint(
-                    bb.latSouth,
-                    bb.lonEast
-            )
-            ORPassesTasks(this, geoTop, geoBottom).execute()
+            Snackbar.make(rootView, "Will be implemented soon, or not...", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
         }
 
         val drawer = findViewById<View>(R.id.drawer_layout) as DrawerLayout
@@ -133,8 +118,18 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
+        val rootView: View = window.decorView.rootView.findViewById(R.id.main_app_view)
 
 
+        if (id == R.id.action_toggle_elevation) {
+            val elevationFragment = rootView.findViewById<View>(R.id.elevation_fragment_layout)
+            if (elevationFragment.visibility == View.GONE) {
+                elevationFragment.visibility = View.VISIBLE
+            } else {
+                elevationFragment.visibility = View.GONE
+            }
+
+        }
         if (id == R.id.action_settings) {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)

@@ -4,7 +4,6 @@
     android:id="@+id/elevation_profile_frame"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:visibility="gone"
     android:minHeight="300dp"
     tools:context=".ElevationProfileFragment">
 
