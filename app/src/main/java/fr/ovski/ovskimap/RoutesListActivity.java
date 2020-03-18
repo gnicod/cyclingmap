@@ -1,8 +1,12 @@
 package fr.ovski.ovskimap;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -10,10 +14,12 @@ import android.widget.Toast;
 
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,8 +29,11 @@ import fr.ovski.ovskimap.models.Route;
 
 public class RoutesListActivity extends AppCompatActivity {
 
-    private class RouteViewHolder extends RecyclerView.ViewHolder {
+    private String TAG = "ROUTELIST";
+
+    public class RouteViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
         private View view;
+        private String pathDocument;
 
         RouteViewHolder(View itemView) {
             super(itemView);
@@ -39,11 +48,7 @@ public class RoutesListActivity extends AppCompatActivity {
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
             });
-            view.setOnLongClickListener(v -> {
-                Toast.makeText(v.getContext(), "CRUD", Toast.LENGTH_LONG).show();
-                return true;
-            });
-
+            itemView.setOnCreateContextMenuListener(this);
 
         }
 
@@ -61,6 +66,45 @@ public class RoutesListActivity extends AppCompatActivity {
             TextView textView = view.findViewById(R.id.route_distance_value);
             textView.setText(value.toString());
         }
+
+        void setPathDocument(String path) {
+            this.pathDocument = path;
+        }
+
+        @Override
+        public void onCreateContextMenu(ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) {
+            MenuItem edit = contextMenu.add(Menu.NONE, 1, 1, "Edit");
+            MenuItem delete = contextMenu.add(Menu.NONE, 2, 2, "Delete");
+            edit.setOnMenuItemClickListener(onEditMenu);
+            delete.setOnMenuItemClickListener(onEditMenu);
+        }
+
+        private final MenuItem.OnMenuItemClickListener onEditMenu = item -> {
+
+            switch (item.getItemId()) {
+                case 1:
+                    Toast.makeText(getApplicationContext(), "edit", Toast.LENGTH_LONG).show();
+                    break;
+
+                case 2:
+                    Toast.makeText(getApplicationContext(), "delete "+ pathDocument, Toast.LENGTH_LONG).show();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    View rootView = RoutesListActivity.this.findViewById(R.id.routes_list_view);
+                    new AlertDialog.Builder(RoutesListActivity.this)
+                            .setTitle(R.string.title_dialog_delete_route)
+                            .setMessage(R.string.text_dialog_delete_route)
+                            .setPositiveButton("Yes", (dialog, which) -> {
+                                db.document(pathDocument)
+                                        .delete()
+                                        .addOnSuccessListener(aVoid -> Snackbar.make(rootView, R.string.success_delete_route, Snackbar.LENGTH_LONG).show())
+                                        .addOnFailureListener(e -> Snackbar.make(rootView, R.string.error_delete_route, Snackbar.LENGTH_LONG).show());
+                            })
+                            .setNegativeButton("no", null)
+                            .show();
+                    break;
+            }
+            return true;
+        };
     }
     private FirestoreRecyclerAdapter<Route, RouteViewHolder> adapter;
 
@@ -82,9 +126,13 @@ public class RoutesListActivity extends AppCompatActivity {
         adapter = new FirestoreRecyclerAdapter<Route, RouteViewHolder>(options) {
             @Override
             protected void onBindViewHolder(@NonNull RouteViewHolder holder, int position, @NonNull Route route) {
+                QueryDocumentSnapshot doc = (QueryDocumentSnapshot) getSnapshots().getSnapshot(position);
+                String key = doc.getId();
                 holder.setName(route.getName());
                 holder.setDistance(route.getDistance());
                 holder.setAscent(route.getAscent());
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                holder.setPathDocument("/users/"+user.getUid()+"/routes/"+key);
             }
 
             @NonNull

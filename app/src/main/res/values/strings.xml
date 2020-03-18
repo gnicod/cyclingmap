@@ -97,4 +97,9 @@
     <string name="ascent_label">Ascent: </string>
     <string name="distance_label" >Distance: </string>
     <string name="action_toggle_elevation">Toggle elevation profile</string>
+    <string name="title_dialog_delete_route">Suppression de route</string>
+    <string name="text_dialog_delete_route">Êtes-vous sûr de vouloir supprimer cette route ?</string>
+    <string name="success_delete_route">La route a bien été supprimé</string>
+    <string name="error_delete_route">Oups, une erreur est survenue lors de la suppression de la route.</string>
+    <string name="action_cache_route">Télécharger carte du parcours</string>
 </resources>

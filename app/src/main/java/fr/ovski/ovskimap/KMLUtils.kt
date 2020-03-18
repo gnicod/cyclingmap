@@ -76,12 +76,19 @@ class KMLUtils {
         }
 
         /**
+         * Return a list of geopoints contained in the KMLDocument passed in parameters
+         */
+        fun getGeopoints(kmlDocument: KmlDocument): java.util.ArrayList<GeoPoint> {
+            return (kmlDocument.mKmlRoot.mItems[0] as KmlPlacemark).mGeometry.mCoordinates
+        }
+
+        /**
          * From a KmlDocument object return an Entry of distance, altitude used to feed a LineChart
          */
         fun getEntriesFromKmlDocument(kmlDocument: KmlDocument): ArrayList<Entry> {
             var distance: Float = 0F
             val results = arrayListOf<Entry>()
-            val coordinates = (kmlDocument.mKmlRoot.mItems[0] as KmlPlacemark).mGeometry.mCoordinates
+            val coordinates = getGeopoints(kmlDocument)
             coordinates.forEachIndexed {
                 index, geopoint ->
                 run {

@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.preference.PreferenceManager
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -18,17 +19,31 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton
-import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu
-import com.oguzdev.circularfloatingactionmenu.library.SubActionButton
+import fr.ovski.ovskimap.models.Route
 import org.osmdroid.config.Configuration
-import org.osmdroid.util.GeoPoint
+import org.osmdroid.tileprovider.MapTile
+import org.osmdroid.tileprovider.cachemanager.CacheManager
 import org.osmdroid.views.MapView
+import org.osmdroid.tileprovider.cachemanager.CacheManager.CacheManagerCallback as CacheManagerCallback1
+import kotlin.Int as Int
 
 open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     protected lateinit var preferences: SharedPreferences
     protected lateinit var editor: SharedPreferences.Editor
+    var currentRoute: Route? = null
+
+    companion object {
+        val MODE_NORMAL = 0
+        val MODE_ROUTING = 1
+        val MODE_DISPLAY_ROUTE = 2
+    }
+
+    var mapMode = MODE_NORMAL
+        set(value) {
+            invalidateOptionsMenu()
+            field = value
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,20 +51,9 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         // Floating Action Menu
         val icon = ImageView(this) // Create an icon
         icon.setImageDrawable(resources.getDrawable(R.drawable.ic_menu_mapmode))
-        val actionButton = FloatingActionButton.Builder(this)
-                .setContentView(icon)
-                .build()
-        val itemBuilder = SubActionButton.Builder(this)
         // repeat many times:
         val itemIcon = ImageView(this)
         itemIcon.setImageDrawable(resources.getDrawable(R.drawable.ic_menu_mylocation))
-        val button1 = itemBuilder.setContentView(itemIcon).build()
-
-        val actionMenu = FloatingActionMenu.Builder(this)
-                .addSubActionView(button1)
-                .attachTo(actionButton)
-                .build()
-
 
         val ctx = applicationContext
         preferences = PreferenceManager.getDefaultSharedPreferences(ctx)
@@ -58,18 +62,6 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         setContentView(R.layout.activity_base)
         val toolbar = findViewById<View>(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
-
-        /*
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-        */
-
         val drawer = findViewById<View>(R.id.drawer_layout) as DrawerLayout
         val toggle = ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
@@ -92,6 +84,10 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
+        if (mapMode != MODE_DISPLAY_ROUTE) {
+            val item = menu.findItem(R.id.action_cache_route)
+            item.isVisible = false
+        }
         return true
     }
 
@@ -135,6 +131,16 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             startActivity(intent)
             return true
         }
+        if (id == R.id.action_cache_route) {
+            if (currentRoute == null) true
+            val map = findViewById<MapView>(R.id.map)
+            val cm = CacheManager(map)
+            val geopoints = currentRoute!!.kmlDocument?.let { KMLUtils.getGeopoints(it) }
+            cm.downloadAreaAsync(this, geopoints, 15, 17)
+            Log.i("OVSKI CACHE", "cache capacity " + (cm.cacheCapacity()/(1024*1024)).toString())
+            Log.i("OVSKI CACHE", "cache usage " + (cm.currentCacheUsage()/ (1024 * 1024)).toString())
+            return true
+        }
 
         return super.onOptionsItemSelected(item)
     }
@@ -145,5 +151,6 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 1)
         }
     }
+
 
 }

@@ -138,9 +138,11 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
      */
     fun displayRouteFromIntent() {
         val bundle = intent.extras ?: return
-        val route = bundle.getSerializable("route") as Route
+        currentRoute = bundle.getSerializable("route") as Route
+        // TODO check route contains kml ?
+        mapMode = MODE_DISPLAY_ROUTE
         val kmlDocument = KmlDocument()
-        kmlDocument.parseKMLFile(KMLUtils.convertStringToFile(route.kml))
+        kmlDocument.parseKMLFile(KMLUtils.convertStringToFile(currentRoute!!.kml))
         val entries = KMLUtils.getEntriesFromKmlDocument(kmlDocument)
         val elevationFragment = ElevationProfileFragment.newInstance(entries, "test")
         val fragmentManager = supportFragmentManager
@@ -393,12 +395,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.main, menu)
-        return true
-    }
-
     override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
         when (tapState) {
             TAP_DEFAULT_MODE -> Toast.makeText(this, "Tapped", Toast.LENGTH_SHORT).show()
@@ -409,7 +405,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     }
 
     override fun longPressHelper(p: GeoPoint): Boolean {
-
+        Toast.makeText(this, map!!.zoomLevel.toString(), Toast.LENGTH_SHORT).show()
         val sources = ArrayList(Arrays.asList("Insert POI", "Go to"))
         if (tapState == TAP_ROUTING_MODE) {
             sources.add("Add waypoint")

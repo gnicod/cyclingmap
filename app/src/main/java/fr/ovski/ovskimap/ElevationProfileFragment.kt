@@ -75,7 +75,6 @@ class ElevationProfileFragment : Fragment(), OnChartValueSelectedListener {
         return inflater.inflate(R.layout.fragment_elevation_profile, container, false)
     }
 
-    //La vista de layout ha sido creada y ya está disponible
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val elevationChart = view!!.findViewById(R.id.elevation_profile) as LineChart

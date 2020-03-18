@@ -11,4 +11,9 @@
         android:orderInCategory="100"
         android:title="@string/action_toggle_elevation"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_cache_route"
+        android:orderInCategory="100"
+        android:title="@string/action_cache_route"
+        app:showAsAction="never" />
 </menu>
