@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap.markers
+package com.trekle.trekle.markers
 
 import android.graphics.Color
 import org.osmdroid.views.MapView

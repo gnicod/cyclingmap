@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap
+package com.trekle.trekle
 
 import android.Manifest
 import android.content.Intent
@@ -19,16 +19,17 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import fr.ovski.ovskimap.models.Route
+import com.sweetzpot.stravazpot.authenticaton.api.AccessScope
+import com.sweetzpot.stravazpot.authenticaton.api.ApprovalPrompt
+import com.sweetzpot.stravazpot.authenticaton.api.StravaLogin
+import com.trekle.trekle.models.Route
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.MapTile
 import org.osmdroid.tileprovider.cachemanager.CacheManager
 import org.osmdroid.views.MapView
-import org.osmdroid.tileprovider.cachemanager.CacheManager.CacheManagerCallback as CacheManagerCallback1
-import kotlin.Int as Int
 
 open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
+    private val RQ_LOGIN: Int = 2000
     protected lateinit var preferences: SharedPreferences
     protected lateinit var editor: SharedPreferences.Editor
     var currentRoute: Route? = null
@@ -96,9 +97,18 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         val id = item.itemId
         val rootView: View = window.decorView.rootView.findViewById(R.id.main_app_view)
 
-        if (id == R.id.nav_gallery) {
+        if (id == R.id.nav_saved_routes) {
             val intent = Intent(this, RoutesListActivity::class.java)
             startActivity(intent)
+        } else if (id == R.id.nav_strava_routes) {
+            // TODO check if user account is attached to strava, if not, dialog box and connect to strava
+            val intent = StravaLogin.withContext(this)
+                    .withClientID(44750)
+                    .withRedirectURI("https://hycling.firebaseapp.com/popup.html")
+                    .withApprovalPrompt(ApprovalPrompt.AUTO)
+                    .withAccessScope(AccessScope.VIEW_PRIVATE_WRITE)
+                    .makeIntent()
+            startActivityForResult(intent, RQ_LOGIN)
         } else if (id == R.id.nav_share) {
             Snackbar.make(rootView, "Will be implemented soon, or not...", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()

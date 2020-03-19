@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap
+package com.trekle.trekle
 
 import com.github.mikephil.charting.data.Entry
 import org.osmdroid.bonuspack.kml.KmlDocument
@@ -93,7 +93,7 @@ class KMLUtils {
                 index, geopoint ->
                 run {
                     if (index > 0) {
-                        distance = (distance + distanceBetweenGeoPoints(coordinates.get(index-1), coordinates.get(index)))
+                        distance = (distance + distanceBetweenGeoPoints(coordinates.get(index - 1), coordinates.get(index)))
                     }
                     results.add(Entry(distance, geopoint.altitude.toFloat(), geopoint))
                 }

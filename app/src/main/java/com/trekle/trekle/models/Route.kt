@@ -1,6 +1,6 @@
-package fr.ovski.ovskimap.models
+package com.trekle.trekle.models
 
-import fr.ovski.ovskimap.KMLUtils
+import com.trekle.trekle.KMLUtils
 import org.osmdroid.bonuspack.kml.KmlDocument
 import java.io.Serializable
 

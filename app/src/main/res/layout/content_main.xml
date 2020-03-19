@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="fr.ovski.ovskimap.MainActivity"
+    tools:context="fr.ovski.ovskimap.com.trekle.trekle.MainActivity"
     android:id="@+id/main_app_view"
     tools:showIn="@layout/app_bar_main">
 
@@ -16,7 +16,7 @@
 
         <fragment
             android:id="@+id/routing_fragment"
-            android:name="fr.ovski.ovskimap.RoutingFragment"
+            android:name="com.trekle.trekle.RoutingFragment"
             android:layout_width="match_parent"
             android:layout_height="300dp" />
 
@@ -33,7 +33,7 @@
             android:layout_height="wrap_content">
         <fragment
             android:id="@+id/elevation_fragment"
-            android:name="fr.ovski.ovskimap.ElevationProfileFragment"
+            android:name="com.trekle.trekle.ElevationProfileFragment"
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:layout_weight="1"

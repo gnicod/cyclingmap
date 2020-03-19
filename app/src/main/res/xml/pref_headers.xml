@@ -3,17 +3,17 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-        android:fragment="fr.ovski.ovskimap.SettingsActivity$OpenRunnerPreferenceFragment"
+        android:fragment="com.trekle.trekle.SettingsActivity$OpenRunnerPreferenceFragment"
         android:icon="@drawable/ic_info_black_24dp"
         android:title="@string/pref_header_openrunner" />
 
     <header
-        android:fragment="fr.ovski.ovskimap.SettingsActivity$NotificationPreferenceFragment"
+        android:fragment="com.trekle.trekle.SettingsActivity$NotificationPreferenceFragment"
         android:icon="@drawable/ic_notifications_black_24dp"
         android:title="@string/pref_header_notifications" />
 
     <header
-        android:fragment="fr.ovski.ovskimap.SettingsActivity$DataSyncPreferenceFragment"
+        android:fragment="com.trekle.trekle.SettingsActivity$DataSyncPreferenceFragment"
         android:icon="@drawable/ic_sync_black_24dp"
         android:title="@string/pref_header_data_sync" />
 

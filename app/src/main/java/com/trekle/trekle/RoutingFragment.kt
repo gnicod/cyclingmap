@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap
+package com.trekle.trekle
 
 import android.os.AsyncTask
 import android.os.Bundle
@@ -17,9 +17,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.woxthebox.draglistview.DragListView
-import fr.ovski.ovskimap.adapter.ItemRoutingAdapter
-import fr.ovski.ovskimap.markers.NumMarker
-import fr.ovski.ovskimap.tasks.GraphHopperTask
+import com.trekle.trekle.adapter.ItemRoutingAdapter
+import com.trekle.trekle.markers.NumMarker
+import com.trekle.trekle.tasks.GraphHopperTask
 import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.bonuspack.routing.Road
 import org.osmdroid.util.GeoPoint

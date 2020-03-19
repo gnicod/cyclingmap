@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap.adapter
+package com.trekle.trekle.adapter
 
 
 import android.view.LayoutInflater
@@ -7,8 +7,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.util.Pair
+import com.trekle.trekle.R
 import com.woxthebox.draglistview.DragItemAdapter
-import fr.ovski.ovskimap.R
 import java.util.*
 
 class ItemRoutingAdapter internal constructor(list: ArrayList<Pair<Long, String>>, private val mLayoutId: Int, private val mGrabHandleId: Int, private val mDragOnLongPress: Boolean) : DragItemAdapter<Pair<Long, String>, ItemRoutingAdapter.ViewHolder>() {

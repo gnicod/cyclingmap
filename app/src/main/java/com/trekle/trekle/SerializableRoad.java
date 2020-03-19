@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap;
+package com.trekle.trekle;
 
 import org.osmdroid.bonuspack.routing.Road;
 import org.osmdroid.util.GeoPoint;

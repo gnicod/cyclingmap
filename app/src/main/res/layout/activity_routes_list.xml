@@ -3,7 +3,7 @@
     android:layout_height="match_parent"
     android:layout_width="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="fr.ovski.ovskimap.RoutesListActivity">
+    tools:context="fr.ovski.ovskimap.com.trekle.trekle.RoutesListActivity">
     >
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"

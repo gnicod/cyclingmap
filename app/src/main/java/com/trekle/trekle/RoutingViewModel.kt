@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap
+package com.trekle.trekle
 
 import androidx.lifecycle.ViewModel
 

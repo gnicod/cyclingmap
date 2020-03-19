@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap.markers
+package com.trekle.trekle.markers
 
 import android.app.AlertDialog
 import android.content.Context
@@ -11,7 +11,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
-import fr.ovski.ovskimap.R
+import com.trekle.trekle.R
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 

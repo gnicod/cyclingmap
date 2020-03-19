@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="fr.ovski.ovskimap">
+    package="com.trekle.trekle">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
@@ -24,7 +24,7 @@
         tools:replace="android:appComponentFactory">
         <meta-data android:name="BING_KEY" android:value="@string/bing_key" />
         <activity
-            android:name=".MainActivity"
+            android:name="com.trekle.trekle.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -34,15 +34,15 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SettingsActivity"
+            android:name="com.trekle.trekle.SettingsActivity"
             android:label="@string/title_activity_settings" />
-        <activity android:name=".RoutesListActivity"/>
+        <activity android:name="com.trekle.trekle.RoutesListActivity"/>
         <activity
-            android:name=".MapActivity"
+            android:name="com.trekle.trekle.MapActivity"
             android:label="@string/title_activity_map"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".BaseActivity"
+            android:name="com.trekle.trekle.BaseActivity"
             android:label="@string/title_activity_base"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>

@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap.layers
+package com.trekle.trekle.layers
 
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.views.overlay.Overlay

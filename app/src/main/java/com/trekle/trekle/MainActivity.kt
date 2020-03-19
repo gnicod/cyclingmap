@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap
+package com.trekle.trekle
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -15,7 +15,6 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.view.Surface
 import android.view.WindowManager
 import android.widget.ImageView
@@ -37,9 +36,9 @@ import com.google.firebase.auth.FirebaseUser
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton
-import fr.ovski.ovskimap.layers.LayerManager
-import fr.ovski.ovskimap.markers.MarkerManager
-import fr.ovski.ovskimap.models.Route
+import com.trekle.trekle.layers.LayerManager
+import com.trekle.trekle.markers.MarkerManager
+import com.trekle.trekle.models.Route
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
 import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.events.MapEventsReceiver

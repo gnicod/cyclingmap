@@ -1,9 +1,12 @@
-package fr.ovski.ovskimap.tasks;
+package com.trekle.trekle.tasks;
 
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+
+import com.trekle.trekle.AsyncResponse;
+import com.trekle.trekle.R;
 
 import org.osmdroid.bonuspack.routing.GraphHopperRoadManager;
 import org.osmdroid.bonuspack.routing.Road;
@@ -14,9 +17,6 @@ import org.osmdroid.views.overlay.Polyline;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import fr.ovski.ovskimap.AsyncResponse;
-import fr.ovski.ovskimap.R;
 
 public class GraphHopperTask extends AsyncTask<Object, Object, Road> {
 

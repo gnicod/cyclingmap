@@ -1,4 +1,4 @@
-package fr.ovski.ovskimap.models;
+package com.trekle.trekle.models;
 
 public class ORPass {
     private int id;
