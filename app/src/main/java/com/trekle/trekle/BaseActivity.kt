@@ -1,9 +1,11 @@
 package com.trekle.trekle
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
@@ -19,17 +21,16 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.sweetzpot.stravazpot.authenticaton.api.AccessScope
 import com.sweetzpot.stravazpot.authenticaton.api.ApprovalPrompt
-import com.sweetzpot.stravazpot.authenticaton.api.StravaLogin
 import com.trekle.trekle.models.Route
+import com.trekle.trekle.strava.StravaLogin
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.cachemanager.CacheManager
 import org.osmdroid.views.MapView
 
 open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
-    private val RQ_LOGIN: Int = 2000
+    val RQ_LOGIN: Int = 2000
     protected lateinit var preferences: SharedPreferences
     protected lateinit var editor: SharedPreferences.Editor
     var currentRoute: Route? = null
@@ -102,11 +103,11 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             startActivity(intent)
         } else if (id == R.id.nav_strava_routes) {
             // TODO check if user account is attached to strava, if not, dialog box and connect to strava
-            val intent = StravaLogin.withContext(this)
+            val intent = StravaLogin(this)
                     .withClientID(44750)
-                    .withRedirectURI("https://hycling.firebaseapp.com/popup.html")
+                    .withRedirectURI("https://hyking-app.firebaseapp.com/ok")
                     .withApprovalPrompt(ApprovalPrompt.AUTO)
-                    .withAccessScope(AccessScope.VIEW_PRIVATE_WRITE)
+                    .withAccessScope("read_all")
                     .makeIntent()
             startActivityForResult(intent, RQ_LOGIN)
         } else if (id == R.id.nav_share) {

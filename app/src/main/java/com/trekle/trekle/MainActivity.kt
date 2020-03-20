@@ -30,15 +30,18 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton
+import com.sweetzpot.stravazpot.authenticaton.ui.StravaLoginActivity
 import com.trekle.trekle.layers.LayerManager
 import com.trekle.trekle.markers.MarkerManager
 import com.trekle.trekle.models.Route
+import com.trekle.trekle.strava.StravaLogin
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
 import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.events.MapEventsReceiver
@@ -85,7 +88,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == RC_SIGN_IN && ::markerManager.isInitialized) {
-            val response = IdpResponse.fromResultIntent(data)
             if (resultCode == Activity.RESULT_OK) {
                 // Successfully signed in
                 this.user = FirebaseAuth.getInstance().currentUser
@@ -94,6 +96,22 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             } else {
                 Log.println(Log.DEBUG, LOG_TAG, "user not logged")
             }
+        }
+        if (requestCode == RQ_LOGIN && resultCode == Activity.RESULT_OK && data != null) {
+            val code = data.getStringExtra(StravaLoginActivity.RESULT_CODE)
+            val clientID = getString(R.string.strava_client_id).toInt()
+            val clientSecret = getString(R.string.strava_client_secret)
+            StravaLogin(this)
+                    .withClientID(clientID)
+                    .withClientSecret(clientSecret)
+                    .onReceiveResultCode(code) { token: String ->  runOnUiThread {
+                StravaInfo.token = token
+                TrekleUser.strava = StravaInfo
+                TrekleUser.save()
+                Snackbar.make(findViewById(R.id.map),token, Snackbar.LENGTH_INDEFINITE).show()
+
+            }}
+            // Use code to obtain token
         }
     }
 

@@ -45,6 +45,11 @@
             android:name="com.trekle.trekle.BaseActivity"
             android:label="@string/title_activity_base"
             android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name="com.sweetzpot.stravazpot.authenticaton.ui.StravaLoginActivity"
+            android:label="@string/login_strava"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity android:name="com.trekle.trekle.strava.StravaLoginActivity" />
     </application>
 
 </manifest>
