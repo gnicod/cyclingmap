@@ -20,7 +20,7 @@ class MarkerManager(context: Context) {
     private val TAG: String? = "MARKERMANAGER"
     private var db: FirebaseFirestore
     private var user: FirebaseUser? = null
-    private var groups: ArrayList<String> = arrayListOf();
+    private var groups: ArrayList<String> = arrayListOf()
 
     init {
         FirebaseApp.initializeApp(context)
@@ -73,8 +73,8 @@ class MarkerManager(context: Context) {
                         val array = arrayOfNulls<String>(groups.size)
                         arrayOf(groups.size)
                         val adapter = ArrayAdapter<String>(c, android.R.layout.select_dialog_item, groups.toArray(array))
-                        groupWidget.setAdapter(adapter);
-                        Log.i(TAG, groups.toString());
+                        groupWidget.setAdapter(adapter)
+                        Log.i(TAG, groups.toString())
                         Log.i(TAG, "text: " + nameWidget.text.toString())
                         Log.i(TAG, "text: " + groupWidget.text.toString())
                         Log.i(TAG, "positive button clicked")

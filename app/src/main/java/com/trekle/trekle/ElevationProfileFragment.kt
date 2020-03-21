@@ -77,7 +77,7 @@ class ElevationProfileFragment : Fragment(), OnChartValueSelectedListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val elevationChart = view!!.findViewById(R.id.elevation_profile) as LineChart
+        val elevationChart = view.findViewById(R.id.elevation_profile) as LineChart
         if (entries != null) {
             view.visibility = View.VISIBLE
         }
@@ -88,7 +88,7 @@ class ElevationProfileFragment : Fragment(), OnChartValueSelectedListener {
         dataSet.setDrawCircles(false)
         dataSet.setDrawFilled(true)
         dataSet.lineWidth = 5F
-        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER;
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
         val lineData = LineData(dataSet)
         elevationChart.data = lineData
         elevationChart.invalidate() // refresh

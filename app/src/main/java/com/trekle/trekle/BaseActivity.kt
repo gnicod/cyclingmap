@@ -1,11 +1,11 @@
 package com.trekle.trekle
 
 import android.Manifest
-import android.app.Activity
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
@@ -102,14 +102,25 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             val intent = Intent(this, RoutesListActivity::class.java)
             startActivity(intent)
         } else if (id == R.id.nav_strava_routes) {
-            // TODO check if user account is attached to strava, if not, dialog box and connect to strava
-            val intent = StravaLogin(this)
-                    .withClientID(44750)
-                    .withRedirectURI("https://hyking-app.firebaseapp.com/ok")
-                    .withApprovalPrompt(ApprovalPrompt.AUTO)
-                    .withAccessScope("read_all")
-                    .makeIntent()
-            startActivityForResult(intent, RQ_LOGIN)
+            AlertDialog.Builder(this)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setTitle(R.string.strava_popup_attach_title)
+                    .setMessage(R.string.strava_popup_attach_text)
+                    .setNegativeButton("No", null)
+                    .setPositiveButton("ok", object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface?, id: Int) {
+                            // TODO check if user account is attached to strava, if not, dialog box and connect to strava
+                            val intent = StravaLogin(this@BaseActivity)
+                                    .withClientID(44750)
+                                    .withRedirectURI("https://hyking-app.firebaseapp.com/ok")
+                                    .withApprovalPrompt(ApprovalPrompt.AUTO)
+                                    .withAccessScope("read_all")
+                                    .makeIntent()
+                            startActivityForResult(intent, RQ_LOGIN)
+                        }
+                    })
+                    .show()
+
         } else if (id == R.id.nav_share) {
             Snackbar.make(rootView, "Will be implemented soon, or not...", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
@@ -138,8 +149,8 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
         }
         if (id == R.id.action_settings) {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
+            //val intent = Intent(this, SettingsActivity::class.java)
+            //startActivity(intent)
             return true
         }
         if (id == R.id.action_cache_route) {
@@ -157,7 +168,7 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     }
 
     fun askLocationPermissions() {
-        if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
         } else {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 1)
         }
