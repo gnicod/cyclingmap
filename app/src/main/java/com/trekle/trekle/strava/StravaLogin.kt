@@ -2,16 +2,12 @@ package com.trekle.trekle.strava
 
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
-import com.google.android.material.snackbar.Snackbar
 import com.sweetzpot.stravazpot.authenticaton.api.ApprovalPrompt
 import com.sweetzpot.stravazpot.authenticaton.api.AuthenticationAPI
 import com.sweetzpot.stravazpot.authenticaton.model.AppCredentials
 import com.sweetzpot.stravazpot.authenticaton.model.LoginResult
 import com.sweetzpot.stravazpot.authenticaton.ui.StravaLoginActivity
 import com.sweetzpot.stravazpot.common.api.AuthenticationConfig
-import com.trekle.trekle.MainActivity
-import com.trekle.trekle.R
 
 class StravaLogin(private val context: Context?) {
     private var clientSecret: String? = null
@@ -20,18 +16,8 @@ class StravaLogin(private val context: Context?) {
     private var approvalPrompt: ApprovalPrompt? = null
     private var accessScope: String? = null
 
-    fun onReceiveResultCode(code: String?, cb: (token: String) -> Unit) {
-        Thread {
-            val config: AuthenticationConfig = AuthenticationConfig.create()
-                    .debug()
-                    .build()
-            val api = AuthenticationAPI(config)
-            val result: LoginResult = api.getTokenForApp(AppCredentials.with(this.clientID!!, this.clientSecret))
-                    .withCode(code)
-                    .execute()
-            cb(result.token.toString())
-        }.start()
-
+    fun onReceiveResultCode(code: String, cb: (StravaApi) -> Unit) {
+        StravaApi.loginWithCode(code, cb)
     }
     fun withClientID(clientID: Int): StravaLogin {
         this.clientID = clientID

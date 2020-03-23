@@ -95,7 +95,7 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="ascent_label">Ascent: </string>
-    <string name="distance_label" >Distance: </string>
+    <string name="distance_label">Distance: </string>
     <string name="action_toggle_elevation">Toggle elevation profile</string>
     <string name="title_dialog_delete_route">Suppression de route</string>
     <string name="text_dialog_delete_route">Êtes-vous sûr de vouloir supprimer cette route ?</string>
@@ -105,4 +105,5 @@
     <string name="login_strava">Login</string>
     <string name="strava_popup_attach_title">Connexion à Strava</string>
     <string name="strava_popup_attach_text">Votre compte Strava n\'est pas encore associé à Strekle. Voulez-vous l\'associer maintenant ?</string>
+    <string name="title_activity_strava_routes">StravaRoutes</string>
 </resources>

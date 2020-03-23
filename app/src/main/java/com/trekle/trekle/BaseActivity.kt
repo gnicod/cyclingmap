@@ -2,7 +2,7 @@ package com.trekle.trekle
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.DialogInterface
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -23,6 +23,7 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.sweetzpot.stravazpot.authenticaton.api.ApprovalPrompt
 import com.trekle.trekle.models.Route
+import com.trekle.trekle.strava.StravaApi
 import com.trekle.trekle.strava.StravaLogin
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.cachemanager.CacheManager
@@ -102,14 +103,14 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             val intent = Intent(this, RoutesListActivity::class.java)
             startActivity(intent)
         } else if (id == R.id.nav_strava_routes) {
-            AlertDialog.Builder(this)
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .setTitle(R.string.strava_popup_attach_title)
-                    .setMessage(R.string.strava_popup_attach_text)
-                    .setNegativeButton("No", null)
-                    .setPositiveButton("ok", object : DialogInterface.OnClickListener {
-                        override fun onClick(dialog: DialogInterface?, id: Int) {
-                            // TODO check if user account is attached to strava, if not, dialog box and connect to strava
+            // TODO not really true, if the user attach his account and uninstall the app, sharedPreference will contain a false value
+            val sharedPreferences = TrekleApplication.appContext!!.getSharedPreferences("shared_preference", Context.MODE_PRIVATE)
+            if (sharedPreferences.getString(StravaApi.PREF_REFRESH_TOKEN,null) == null) {
+                AlertDialog.Builder(this)
+                        .setTitle(R.string.strava_popup_attach_title)
+                        .setMessage(R.string.strava_popup_attach_text)
+                        .setNegativeButton("No", null)
+                        .setPositiveButton("ok") { _, _ ->
                             val intent = StravaLogin(this@BaseActivity)
                                     .withClientID(44750)
                                     .withRedirectURI("https://hyking-app.firebaseapp.com/ok")
@@ -118,8 +119,15 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                                     .makeIntent()
                             startActivityForResult(intent, RQ_LOGIN)
                         }
-                    })
-                    .show()
+                        .show()
+            } else {
+
+                val intent = Intent(this, StravaRoutesActivity::class.java)
+                startActivity(intent)
+                /*
+                 */
+                Snackbar.make(rootView, "allready logged", Snackbar.LENGTH_LONG).show()
+            }
 
         } else if (id == R.id.nav_share) {
             Snackbar.make(rootView, "Will be implemented soon, or not...", Snackbar.LENGTH_LONG)

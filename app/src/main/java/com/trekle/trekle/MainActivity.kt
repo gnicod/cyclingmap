@@ -27,7 +27,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.firebase.ui.auth.AuthUI
-import com.firebase.ui.auth.IdpResponse
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -37,11 +36,13 @@ import com.google.firebase.auth.FirebaseUser
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton
 import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton
-import com.sweetzpot.stravazpot.authenticaton.ui.StravaLoginActivity
+import com.sweetzpot.stravazpot.authenticaton.model.LoginResult
 import com.trekle.trekle.layers.LayerManager
 import com.trekle.trekle.markers.MarkerManager
 import com.trekle.trekle.models.Route
+import com.trekle.trekle.strava.StravaApi
 import com.trekle.trekle.strava.StravaLogin
+import com.trekle.trekle.strava.StravaLoginActivity
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
 import org.osmdroid.bonuspack.kml.KmlDocument
 import org.osmdroid.events.MapEventsReceiver
@@ -104,13 +105,11 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             StravaLogin(this)
                     .withClientID(clientID)
                     .withClientSecret(clientSecret)
-                    .onReceiveResultCode(code) { token: String ->  runOnUiThread {
-                StravaInfo.token = token
-                TrekleUser.strava = StravaInfo
-                TrekleUser.save()
-                Snackbar.make(findViewById(R.id.map),token, Snackbar.LENGTH_INDEFINITE).show()
-
-            }}
+                    .onReceiveResultCode(code) {
+                        StravaApi -> runOnUiThread {
+                            Snackbar.make(findViewById(R.id.map),"refresh " +StravaApi.refreshToken, Snackbar.LENGTH_INDEFINITE).show()
+                        }
+                    }
             // Use code to obtain token
         }
     }
